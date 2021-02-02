@@ -1,0 +1,17 @@
+Package: scWGCNA
+Title: WGCNA Analyses on Single-cell Data
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Christian",
+           family = "Feregrino",
+           role = c("aut", "cre"),
+           email = "christian.feregrino@unibas.ch",
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: This package performs WGCNA analysis and comparative analyses on single-cell data. It takes pre-analyzed data contained in Seurat objects. Used to perform the analyses in Feregrino & Tschopp 2021.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.0
+Imports:
+  Seurat
