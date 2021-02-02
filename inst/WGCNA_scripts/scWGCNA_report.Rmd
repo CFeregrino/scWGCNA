@@ -1,0 +1,639 @@
+---
+title: "scWGCNA workflow"
+output:
+  html_document:
+    fig_height: 7
+    fig_width: 8
+    df_print: paged
+  pdf_document:
+    fig_height: 7
+    fig_width: 8
+    df_print: paged
+editor_options: 
+  chunk_output_type: inline
+---
+
+Date: `r format(Sys.Date(), "%d.%m.%y")`
+
+We use WGCNA to run an iterative analysis on a data set. 
+We are calculating HVG in the script, but using a threshold of 0.25 for the dispersion.      
+
+## Pre-analysis
+
+We need to first set up our working environment.
+
+```{r Set up, message=FALSE, warning=FALSE, results='hide'}
+
+library(paste0("org.",params$sp,".eg.db"),character.only = T)
+
+# The following setting is important, do not omit
+backup.options = options
+options(stringsAsFactors = FALSE)
+
+```
+
+Get our single cells and the pseudocells to be able to run the analysis
+
+```{r From above, message=FALSE, warning=FALSE, results='hide'}
+
+# placeholder for the variables and options we will get from an upper level pipeline
+
+my.date = format(Sys.Date(), "%d.%m.%y")
+
+project_name = params$project.name
+
+p.Wdata = params$sc.data
+
+gnames = params$gene.names
+rownames(gnames) = gnames[,1]
+
+Wdata = params$data
+
+# The subset in form of cell identities, F if using the whole sample
+my.subset = params$cells
+# Variable genes, or genes to use, F if the genes will be calculated in the script
+my.vargenes = params$features
+
+my.dr = params$reduction
+
+dir.create(paste0(params$dir,"./WGCNA_results"), showWarnings = F)
+
+my.sp = params$sp
+
+is.pseudocell = params$is.pseudocell
+
+```
+
+We need the data in either seurat or data-frame format. This must contain at least 20 samples (no problems with sc data), according to the [documentation of the package itself](https://horvath.genetics.ucla.edu/html/CoexpressionNetwork/Rpackages/WGCNA/faq.html).
+
+```{r pre-process the data}
+
+# If we need to subset the data
+if (my.subset) {
+  p.Wdata = Seurat::SubsetData(p.Wdata, idents=my.subset)
+}
+
+# If no variable genes are provided
+nonex = which(apply(p.Wdata@assays$RNA@counts, 1, function(x) length(which(x >0))) < 10)
+
+if (my.vargenes == F) {
+  # First get rid of non-expressed genes
+  p.Wdata = Seurat::SubsetData(p.Wdata, features = rownames(p.Wdata@assays$RNA)[-nonex])
+  
+  # Find the variable genes
+  p.Wdata=Seurat::FindVariableFeatures(p.Wdata, dispersion.cutoff = c(0.25,Inf), mean.cutoff = c(0,Inf), selection.method = "mvp", assay = "RNA")
+  Seurat::VariableFeaturePlot(p.Wdata, assay = "RNA")
+  Expr = Seurat::VariableFeatures(object = p.Wdata, assay = "RNA")
+  
+} else { Expr = my.vargenes }
+
+# if (length(my.ortho) > 1) {
+#   Expr = Expr[which(Expr %in% my.ortho[,1])]
+#   Expr = Expr[ which(Expr %in% rownames(p.Wdata@assays$RNA)[-nonex]) ]
+# }
+ 
+if (is.pseudocell) {
+  datExpr=Wdata@assays$RNA@counts[Expr,]
+} else{datExpr=Wdata@assays$RNA@data[Expr,]}
+
+# Check the length
+print(paste0("We have ", length(Expr), " genes in the variable genes object"))
+
+# Check the size and transform
+dim(datExpr)
+datExpr = t(as.matrix(datExpr))
+
+```
+
+Now we need to calculate the soft threshold power. First it calculates the similarity and then transforms this similarity to a weighted network. The scale-free topology is calculated for each of the powers.
+
+We choose the smallest power for which the scale-free topology fit index reaches 0.90. 
+If none of the powers reaches 0.90, we take the one with the maximum, as long as we have a number above 0.75. If none of them reaches at least 0.75 we need to check our dataset.
+
+```{r soft-thresholding power, message=FALSE}
+
+# Choose a set of soft-thresholding powers
+powers = c(c(1:10), seq(from = 12, to=30, by=2))
+
+# Call the network topology analysis function
+sft = WGCNA::pickSoftThreshold(datExpr, powerVector = powers, verbose = 0, networkType = "signed", corFnc = "bicor")
+
+# Plot of the scale-free topology fit index as a function of the soft-thresholding power
+plot(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+     xlab="Soft Threshold (power)",ylab="Scale Free Topology Model Fit,signed R^2",type="n",
+     main = paste("Scale independence"))
+text(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+     labels=powers,col="red")
+which((-sign(sft$fitIndices[,3])*sft$fitIndices[,2]) > 0.9)
+# this line corresponds to using an R^2 cut-off of h
+abline(h=0.85,col="red")
+
+# These are the scale-free topology indexes
+indexes = (-sign(sft$fitIndices[,3])*sft$fitIndices[,2])
+
+# If we don't have aany index above 0.75, we stop the script
+if ( !any( indexes > 0.75 ) ) {
+  print("The scale-free topology index didn't reach 0.75 with any of the chosen powers, please consider changing the set of genes or cells provided")
+  # quit(save = "no", 1, F)
+}
+
+# Take the smalles power that gives us an index over 0.9, or the highest index if we don't reach 0.9
+if ( any( indexes > 0.9 ) ) {
+    my.power = sft$fitIndices$Power[min(which(indexes > 0.9))]
+} else { my.power = sft$fitIndices$Power[which.max(indexes)] }
+
+print(paste0("Or power is ", my.power))
+
+```
+
+## WGCNA analysis
+
+Now, the following piece of code will run WGCNA iteratively, to end up with out final modules.
+The iterations follow these steps:
+
+- Tree cutting for module calculation
+  - Calculate an adjacency matrx from the data, then turn it into topological overlap and then into a distance matrix
+  - Calculate the tree based on the topological overlap distance
+  - Calculate the automatic height to cut out the 0.05 quantile
+  - Generate a matrix where we calculate the amount of modules, size of de modules and wheter if we have a grey module based on:
+    - Different minimum module sizes, arbitrarely set to 7:30 
+    - Different cut-heiughts going 0.0005 up and down from the automatic height in steps of 0.0001
+  - Check if any combination of the parameters will get rid of the grey module
+    - If we only get grey modules, subset the matrix for the height at which the grey module is the smallest
+    - If we have a combination without grey module AND we have at least the same number of modules as in the beginning, we subset for whichever those heights are
+  - Take wichever min module sizes gives us at least the same amount of clusters as in the beginning, if none, then the highest
+  - Chose the max of the reminding min module sizes.
+- Calculate the actual modules
+- Calculate the eigengenes
+- Calculate the module membership per gene
+- Calculate the p.value of the membership to a given module
+- Get rid of the genes in the grey module
+- Delete the genes that are not significantely associated with their module
+- Save the remaining geneset
+- Print how many genes were deleted due to significance
+- Unless 0 genes were deleted in the last step, update the expression matrices and beginn again.
+
+ONLY THE FIRST TWO ITERATIONS ARE DIFFERENT.
+
+FIRST:
+
+- During the tree cutting
+  - Set the minimum module size to arbitrary 15
+  - Subset for the heights that get rid of at least 50% of the genes with that min module size
+  - Choose the height that gives us the most clusters
+
+SECOND:
+
+- Set the resulting number of modules as the ground number of modules
+
+```{r WGCNA}
+# Running WGCNA iteratively
+
+my.Clnumber = 20
+change = 0
+genesets=list()
+nonsig = 1
+
+while(nonsig != 0) {
+  
+  # Turn adjacency into topological overlap (high overlap if they share the same "neighborhood")
+  TOM=WGCNA::TOMsimilarityFromExpr(datExpr,networkType = "signed", TOMType = "signed", power = my.power, corType = "bicor")
+  
+  #Put the names in the tree
+  colnames(TOM) <- gnames[colnames(datExpr),2]
+  
+  rownames(TOM) <- gnames[colnames(datExpr),2]
+  
+  #Make it a distance
+  dissTOM = 1-TOM
+  
+  # Call the hierarchical clustering function
+  geneTree = hclust(as.dist(dissTOM), method = "average")
+  
+  
+  # Here I calculate the cutting height. Using the same formula and approach that the WGCNA package uses for the automatic function
+  nMerge = length(geneTree$height) # The whole height of the tree
+  refQuantile = 0.05 # What's the quantile that we want to exclude
+  refMerge = round(nMerge * refQuantile) 
+  refHeight = geneTree$height[refMerge]
+  cutheight = signif(0.99 * (max(geneTree$height) - refHeight) + refHeight,4)
+  
+  # We construct THE TABLE that will help us make decisions
+  # Min cluster sizes, from 7 to 30
+  x=seq(7,30,1)
+  # The height, up and down from the calculated height. We expect some "No module detected"
+  y=seq(cutheight-0.0005,cutheight + 0.0005,0.0001)
+  
+  # The actual dataframe
+  w=data.frame()
+  # Populate, with i=min cluster size, j=cutting height, z=total number of clusters, z.1.=what's the first cluster? 0 is grey 1 is something else,
+  # z.1.'=what's the size of the first cluster?
+  for (i in x) {
+    for (j in y) {
+      sink("aux")
+      z=table(WGCNA::cutreeDynamic(dendro = geneTree,  method="tree", minClusterSize = i, deepSplit = T, cutHeight = j, verbose = 0))
+      sink(NULL)
+      v=data.frame(i,j,dim(z),names(z[1]),unname(z[1]))
+      w=rbind(w,v)
+    }
+  }
+  
+  # The height is then the one where we have the least number of genes in the first cluster
+  my.height = w$j[which(w$unname.z.1..==min(w$unname.z.1..))]
+  
+  # Since different heights can give us the minimum grey size, we chose the computed height, if present, or the highest one.
+  if (cutheight %in% my.height) {
+    my.Clsize = w[which(w$j == cutheight),]
+  } else { my.Clsize = w[which(w$j == max(my.height)),] }
+  
+  
+  # This is to know, if we're looking for a minimum of cluster numbers
+  # If we still have a lot of genes, we don't want to limit the number of clusters
+  # if ( ((dim(datExpr)[2]) / length(Expr)) > 0.6 ) {change = 0}
+  
+  # If this is the first iteration after 0.6 of the genes are gone, we assign the number of clusters (and an extra for the grey in the case)
+  if (change == 2) {
+    my.Clnumber = length(table(dynamicColors)) + 1
+  }
+  # Count another iteration
+  change = change + 1
+  
+  # If we don't have a gray cluster anymore, then we subset for those rows, and set a new height. ONLY if we get the same amount of clusters!
+  if (any(w$names.z.1.. == 1)) { #any combination gives us no grey
+    
+    my.Clsize = w[which(w$names.z.1.. == 1),] # Take all combinations that gives us no grey
+    
+    if (any(my.Clsize$dim.z. >= (my.Clnumber -1) )) { # If there is any giving us the determined amount or more
+      my.Clsize = my.Clsize[which(my.Clsize$dim.z. >= (my.Clnumber - 1) ),,drop=F] # Subset for those
+    } else { my.Clsize = my.Clsize[which(my.Clsize$dim.z. == max(my.Clsize$dim.z.)),,drop=F] } # Or for the highest
+    
+    # Take the ones with the smallest number of clusters
+    my.Clsize = my.Clsize[which(my.Clsize$dim.z. == min(my.Clsize$dim.z.)),,drop=F]
+    # Take the one with the highest min cluster size
+    my.Clsize = my.Clsize[which(my.Clsize$i == max(my.Clsize$i)),,drop=F]
+    
+    if (cutheight %in% my.Clsize$j) { # if original computed height is in,
+      my.height = cutheight # take it
+    } else { my.height = max(my.Clsize$j) } # Otherwise, the highest height
+    
+    my.Clsize = max(my.Clsize$i)
+    
+  }
+  
+    # Subset the table again, for those sizes that will gives the same number of clusters or more. IF NONE, use the highest number
+  if (!any(w$names.z.1.. == 1)){
+    if (any(my.Clsize$dim.z. >= my.Clnumber)) {
+      my.Clsize = my.Clsize[which(my.Clsize$dim.z. >= my.Clnumber),,drop=F]
+    } else {
+      my.Clsize = my.Clsize[which(my.Clsize$dim.z. == max(my.Clsize$dim.z.)),,drop=F]}
+    
+   # Take the ones with the smallest number of clusters
+    my.Clsize = my.Clsize[which(my.Clsize$dim.z. == min(my.Clsize$dim.z.)),,drop=F]
+    # Take the one with the highest min cluster size
+    my.Clsize = my.Clsize[which(my.Clsize$i == max(my.Clsize$i)),,drop=F]
+    
+    if (cutheight %in% my.Clsize$j) { # if original computed height is in,
+      my.height = cutheight # take it
+    } else { my.height = max(my.Clsize$j) } # Otherwise, the highest height
+    
+    my.Clsize = max(my.Clsize$i)
+  }
+  
+  # If we still have more than 60% of the genes, we just use the min size of 15 regardles
+  if ( change < 3 ) {
+    my.Clsize = 15
+    my.height = cutheight
+  }
+  
+  dynamicMods = WGCNA::cutreeDynamic(dendro = geneTree,  method="tree", minClusterSize = my.Clsize, deepSplit = T, cutHeight = my.height)
+  
+  #dynamicMods = cutreeDynamic(dendro = geneTree, distM = dissTOM, deepSplit = 2, minClusterSize = minModuleSize)
+  
+  table(dynamicMods)
+  
+  # Convert numeric lables into colors
+  dynamicColors = WGCNA::labels2colors(dynamicMods)
+  table(dynamicColors)
+  
+  # Plot the dendrogram and colors underneath
+  WGCNA::plotDendroAndColors(geneTree, dynamicColors, "Modules",
+                      dendroLabels = NULL,
+                      cex.dendroLabels = 0.6,
+                      addGuide = TRUE,
+                      main = "Gene dendrogram and module colors",
+                      guideAll = F)
+  
+  par(mfrow=c(1,1))
+  
+  # Calculate eigengenes
+  MEList = WGCNA::moduleEigengenes(as.matrix(datExpr), colors = dynamicColors)
+  
+  MEs = MEList$eigengenes
+  
+  # Calculate the module membership
+  geneModuleMembership = as.data.frame(WGCNA::signedKME(datExpr, MEs))
+  MMPvalue = as.data.frame(WGCNA::corPvalueStudent(as.matrix(geneModuleMembership), nrow(datExpr)))
+  
+  # We're gonna make a list, where we keep the genes that are significantly associated with each module
+  x=c()
+  xy=list()
+  
+  # We also need a vector with all the dynamic colors
+  dcols = 1:length(levels(as.factor(dynamicColors)))
+  
+  # Getting rid of the grey module
+  grey.genes = length(which(dynamicColors == "grey"))
+  if (any(levels(as.factor(dynamicColors)) == "grey")) {
+    dcols = dcols[-which(levels(as.factor(dynamicColors)) == "grey")]
+  }
+  
+  # Run the loop to get the genes
+  for (i in dcols) {
+    modGenes = rownames(MMPvalue)[which(dynamicColors==levels(as.factor(dynamicColors))[i] & MMPvalue[,i]<0.01)]
+    x=c(x,modGenes)
+    xy[[i]]=modGenes
+    #print(paste0(levels(as.factor(dynamicColors))[i]," ",length(modGenes),
+    #" of ", length(which(dynamicColors==levels(as.factor(dynamicColors))[i]))))
+    #print(gnames[modGenes,2])
+  }
+  
+  # Make a new list, where we keep ALL the gens thar are left from the iteration, that will be used to make the new object. To keep track
+  genesets[[length(genesets)+1]] = colnames(datExpr)
+  
+  # Give me a message saying how many genes are gone this time
+  cat( paste0( grey.genes, " genes not assigned to any module.", '\n',
+                 length(which(!(colnames(datExpr)%in%x))) - grey.genes, " genes excluded due to significance."))
+  # Save this also, cause if it's 0 then we stop the whole thing
+  nonsig = length(which(!(colnames(datExpr)%in%x)))
+  
+  # If it ain't 0, subset the dynamic colors and the expression data
+  if (length(which(!(colnames(datExpr)%in%x))) != 0) {
+    dynamicColors=dynamicColors[-which(!(colnames(datExpr)%in%x))]
+    datExpr=datExpr[,-(which(!(colnames(datExpr)%in%x)))]
+  } 
+
+}
+```
+
+```{r raw eigengenes}
+
+p.MEList = MEList
+
+raw.datExpr = p.Wdata@assays$RNA@scale.data[colnames(datExpr),]
+
+raw.datExpr = t(as.matrix(raw.datExpr))
+
+raw.MEList = WGCNA::moduleEigengenes(raw.datExpr, colors = dynamicColors)
+  
+p.MEList = raw.MEList
+
+```
+
+## Modules of co-expression
+
+For single cells
+We can see what are the expression levels of our co-expression modules. If we provided a seurat object. We look, in this case, at a tSNE
+
+```{r Plot multiexpression}
+xx=list()
+yy=c(levels(as.factor(dynamicColors)))
+for (i in 1:length(yy)) {
+  toplot = data.frame(p.Wdata@reductions[[my.dr]]@cell.embeddings)
+  
+  xx[[i]] = ggplot2::ggplot(toplot[order(p.MEList$averageExpr[,i]),],
+                   ggplot2::aes_string(x=colnames(toplot)[1], y=colnames(toplot)[2])) +
+    ggplot2::geom_point(aes_string(color=p.MEList$averageExpr[order(p.MEList$averageExpr[,i]),i]), size=2) +
+    ggplot2::scale_size(range = c(1, 1)) +
+    ggplot2::theme_void() + 
+    ggplot2::theme(legend.position="none") +
+    ggplot2::scale_colour_gradientn(colours = c("gray90", "gray90", yy[i], yy[i])) +
+    ggplot2::labs(colour=levels(as.factor(dynamicColors))[i])
+}
+gridExtra::grid.arrange(grobs=xx, ncol=4)
+```
+
+Create a list object with all the essential data from the analyses
+
+```{r Save object}
+
+WGCNA_data = list()
+WGCNA_data[["datExpr"]] = datExpr
+WGCNA_data[["dynamicMods"]] = dynamicMods
+WGCNA_data[["MEList"]] = MEList
+WGCNA_data[["MEs"]] = MEs
+WGCNA_data[["modGenes"]] = xy
+WGCNA_data[["modPlots"]] = xx
+WGCNA_data[["genesets"]]= genesets
+WGCNA_data[["TOM"]]= TOM
+WGCNA_data[["adjacency"]]= adjacency
+
+saveRDS(WGCNA_data, file = paste0(params$dir,"/data/",project_name,"_WGCNA_data.rds"))
+
+```
+
+To create the visualizations of the actual co-expression networks, we use this code. It also creates files that can be read into cytoscape
+
+```{r Network plotting, message=F}
+# we create a new directory where the network files will be
+my.dirname = paste0(params$dir,"/data/",project_name,"WGCNA_networks/")
+
+dir.create(my.dirname)
+
+modules=unique(dynamicColors) # The modules
+
+# To generate the files necessary for the network visualization in cytoscape
+for (i in 1:length(modules)) {
+  mod=is.finite(match(dynamicColors, modules[i])) # Each module
+  cyt = WGCNA::exportNetworkToCytoscape(TOM[mod,mod], 
+                                 edgeFile = paste( paste0(my.dirname,"CytoscapeInput-edges-"),
+                                                  paste(modules[i], collapse="-"), ".txt", sep=""), # The name of the edge file
+                                 nodeFile = paste( paste0(my.dirname,"CytoscapeInput-nodes-"),
+                                                  paste(modules[i], collapse="-"), ".txt", sep=""), # The node file
+                                 weighted = TRUE, #Puts the weights
+                                 threshold = 0.0, #Threshold for adjacency, 0=all genes
+                                 nodeNames = colnames(datExpr)[mod], #The names of the nodes/genes
+                                 altNodeNames = gnames[colnames(datExpr)[mod],2], #Other names
+                                 nodeAttr = geneModuleMembership[colnames(datExpr)[mod],i]) #Some more info about the nodes
+}
+
+# We build a list where we keep the network plots
+netplots=list()
+
+lcols = c(rep("black", length(unique(dynamicColors))))
+lcols[(apply(col2rgb(levels(as.factor(dynamicColors))), 2,
+               function(x) (x[1]*0.299 + x[2]*0.587 + x[3]*0.114)) < 75)] = "white"
+
+mynets = list()
+
+# A loop that makes the network plots in R
+for (i in 1:length(xx)) {
+  # Load directly edges tables from the file we created
+  mynetwork = read.table(paste0(my.dirname,"CytoscapeInput-edges-",levels(as.factor(dynamicColors))[i],".txt"),
+                       header = T, stringsAsFactors = F, fill=T)
+  # We get rid of all the edges that have a very small weight. The cutoff set to keep at least ONE edge on the nodes
+  x = max( c( min(aggregate(mynetwork$weight, by = list(mynetwork$fromNode), max)$x),
+              min(aggregate(mynetwork$weight, by = list(mynetwork$toNode), max)$x) ) )
+  mynetwork=mynetwork[-which(mynetwork$weight < x),]
+  
+  # We rescale the weights so that we have them from 0 to 1
+  mynetwork$weight01 = GGally::rescale01(mynetwork[,3])
+  # And then multiply them by 2, to give the heavy edges a 2 thickness, we ad 0.2 to not have completelly invisible edges
+  mynetwork[,3] = (GGally::rescale01(mynetwork[,3]) * 2) + 0.2
+  # Convert this edgelist into a network object
+  mynet = network::network(mynetwork, matrix.type="edgelist", ignore.eval=F)
+  
+  # Load in the nodes table
+  mynodes = read.table(paste0(my.dirname,"CytoscapeInput-nodes-",levels(as.factor(dynamicColors))[i],".txt"),
+                     header = T, stringsAsFactors = F, fill = T)
+  rownames(mynodes) <- mynodes$nodeName
+  # put in the membership value, from the ModuleMembership table, and rescale that from 0 to 1.
+  mynodes$membership = GGally::rescale01(geneModuleMembership[rownames(mynodes),i]) 
+  # We multiply by 30 to give a good range of sizes, plus 1 to avoid innexistant nodes
+  mynodes$membership= (mynodes$membership*30)+1
+  
+  mynet = network::set.vertex.attribute(mynet, "membership", mynodes[network.vertex.names(mynet),"membership"])
+  
+  mynets[[i]] = mynet
+  
+}
+
+```
+
+To check the results module by module, we report some GO terms and individual plots, with module sizes and gene names. First the GO terms analyses
+
+```{r GO analysis, fig.height=10, fig.width=6, message=FALSE}
+#Get the ENSEMBL to ENTREZ list from the BioMart
+
+my.ENS2EG = get(paste0("org.",my.sp,".egENSEMBL2EG"))
+
+IDs=as.list(my.ENS2EG)
+
+#Create two lists, one for the DEGs and one for the GOs
+dewg = list()
+gowg = list()
+
+# A loop that goes through the DEG files we created earlier
+for(i in 1:length(yy)){ #as many clusters as we have
+  dewg[[i]] = xy[[i]] #Read the table
+  ex = sapply(dewg[[i]], function(x) exists(x, my.ENS2EG)) #Which genes have an ENTREZ?
+  dewg[[i]] = dewg[[i]][ex] #Only those genes
+  dewg[[i]] = unlist(IDs[dewg[[i]]]) #The ENTREZ IDs
+  gowg[[i]] = limma::goana(dewg[[i]], species = my.sp, universe = unlist(IDs[rownames(Wdata)])) #The GO analysis
+}
+
+goplots=list()
+goterms=list()
+
+for (i in 1:length(yy)) {
+  toplot=limma::topGO(gowg[[i]], n= 50, ontology = c("BP"))
+  
+  #Change to character and then back to factor, to keep the order from TopGO
+  toplot$Term = as.character(toplot$Term)
+  toplot$Term = factor(toplot$Term, levels = unique(toplot$Term))
+  
+  goterms[[i]]=toplot
+  
+}
+
+#TO make the acutal plot we're having, we combine all the GOs
+g.plot = data.frame()
+topterms = data.frame()
+
+for (i in 1:length(goterms)) {
+  topterms = goterms[[i]][1:5,]
+  topterms$cluster = i
+  g.plot = rbind(g.plot, topterms)
+}
+
+g.plot$cluster = as.factor(g.plot$cluster)
+
+my.terms = nchar(as.character(g.plot$Term))>45
+my.gterms = strtrim(g.plot$Term, 45)
+my.gterms[my.terms] = paste0(my.gterms[my.terms],"...")
+
+ggplot2::ggplot(g.plot, ggplot2::aes(x=Term, y=-log10(P.DE), fill=cluster)) +
+    ggplot2::geom_point(aes(shape = cluster), size = 3) +
+    ggplot2::theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    ggplot2::labs(x="GO Term", y="-log10 p. value") +
+    ggplot2::scale_x_discrete(labels=my.gterms) +
+    ggplot2::scale_fill_manual(name = "Module",
+                      labels = yy,
+                      values = yy) + 
+    ggplot2::scale_shape_manual(name = "Module",
+                       labels = yy,
+                       values = rep(c(21,22,23,24,25),20)) + 
+  ggplot2::coord_flip()
+
+```
+
+And here the report of each of the modules
+
+```{r results per module, results="asis", fig.height=9}
+
+# Go trhough the modules
+for(i in 1:length(xx)){
+  
+  # A table is done, where we put the genes names that are making-up the module, in rows of 10. We fill the las row with empty spaces
+  ktable1 = data.frame( matrix( c(gnames[xy[[i]],2],rep(" ", 10-length(gnames[xy[[i]],2])%%10 )), ncol = 10, byrow = T ) )
+  colnames(ktable1) = rep(".", 10)
+  
+  # Another table, where we put the top 10 GO terms, in two columns
+  ktable2 = data.frame( matrix( as.character(goterms[[i]][1:10,1]), ncol = 2, byrow = F ) )
+  colnames(ktable2) = rep(".", 2)
+  
+  # We make a plot in which we show the mean expression level of the co-expression module
+  
+  toplot = data.frame(p.Wdata@reductions[[my.dr]]@cell.embeddings)
+  
+  myplot = ggplot2::ggplot(toplot[order(p.MEList$averageExpr[,i]),],
+                   ggplot2::aes_string(x=colnames(toplot)[1], y=colnames(toplot)[2])) +
+      ggplot2::geom_point(aes_string(color=p.MEList$averageExpr[order(p.MEList$averageExpr[,i]),i])) +
+      ggplot2::scale_size(range = c(1, 1)) +
+      ggplot2::theme_void() +
+      ggplot2::scale_colour_gradientn(colours = c("gray90", "gray90", yy[i], yy[i])) +
+      ggplot2::labs(colour=levels(as.factor(dynamicColors))[i])
+  
+  mynet=mynets[[i]]
+  
+  mynetplot = GGally::ggnet2(mynet,
+                         mode = "fruchtermanreingold",
+                         layout.par = list(repulse.rad=network.size(mynet)^1.1,
+                                           area=network.size(mynet)^2.3), # Give space in the middle
+                         node.size = get.vertex.attribute(mynet,'membership'), max_size = 22, #The size of the nodes
+                         node.color = levels(as.factor(dynamicColors))[i], # The color of the module
+                         edge.size = "weight",
+                         edge.color = "black",
+                         edge.alpha = get.edge.attribute(mynet,'weight01'),
+                         ) +
+    ggplot2::theme(legend.position="none") +
+    ggplot2::geom_label(ggplot2::aes(label=gnames[network.vertex.names(mynet),2]),
+               fill = levels(as.factor(dynamicColors))[i],
+               alpha = 0.5,
+               color=lcols[i],
+               fontface = "bold")
+  
+  # We put our mean expression plot toghether with the network plot
+  gridExtra::grid.arrange(grobs=list(myplot,mynetplot), nrow=2)
+  plot.new()
+  dev.off()
+  cat("\n")
+  # A table showing the number, color and size of the module
+  print(knitr::kable(data.frame(module=i, color=names(table(dynamicColors))[i], size=unname(table(dynamicColors)[i]))))
+  cat("\n")
+  # The other two tables we just made
+  print(knitr::kable(ktable1))
+  cat("\n")
+  print(knitr::kable(ktable2))
+  cat("\n")
+
+}
+
+```
+
+```{r info}
+
+options(backup.options)
+
+sessionInfo()
+
+```
