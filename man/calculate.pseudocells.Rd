@@ -22,7 +22,7 @@ calculate.pseudocells(seurat, seeds=0.2, nn = 10, reduction = "pca", dims = 1:20
 \item{idents}{The clusters or identities to be used. Takes a string of identities as present in the @active.ident slot. Defaults to NULL, which will use all the identities.}
 }
 \value{
-A seurat object of aggregated pseudocells. With average expression. The slot misc contains the pseudocells dataframe, with each original cell and its assigned pseudocell
+A seurat object of aggregated pseudocells. With average expression. The slot misc contains the pseudocells dataframe, with each original cell and its assigned pseudocell, if no pseudocell is assigned then 00
 }
 \description{
 This function calculates pseudocells from a Seurat object, based on pre-calculated cell clusters and dimentionality reduction.
