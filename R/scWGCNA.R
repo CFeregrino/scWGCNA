@@ -13,18 +13,23 @@
 #' @param reduction The reduction to use for plots. It must be present in the @@reductions slot of sc.data. Default is "tsne"
 #' @param dir The directory to save the output to. It defaults to the working directory
 #' @param is.pseudocell is the main data pseudocell data? Default is T
+#' @param GO should GO term enrichment analyses be performed? Default is T
 #' @return Saves a report as well as different objects.
 #' @export
+#' @importFrom WGCNA bicor
 #' 
 
-scWGNA.report = function(data,sc.data,gene.names, project.name, sp="Mm", cells=F, features=F, reduction="tsne", dir="./", is.pseudocell=T) {
+scWGNA.report = function(data,sc.data,gene.names, project.name, sp="Mm", cells=F, features=F, reduction="tsne", dir="./", is.pseudocell=T,GO=T) {
   
-  if (!paste0("org.",sp,".eg.db") %in% rownames(utils::installed.packages())) {
-         stop(paste0("org.",sp,".eg.db")," is not installed. This is necessary to carry out GO Term analyses. Please install and try again")
-     }
+  if (GO==T) {
+    if (!paste0("org.",sp,".eg.db") %in% rownames(utils::installed.packages())) {
+      stop(paste0("org.",sp,".eg.db")," is not installed. This is necessary to carry out GO Term analyses. Please install and try again")
+    }
+  }
+  
   
   rmarkdown::render(
-    system.file("WGCNA_scripts", "scWGCNA_report", package = "scWGCNA"), params = list(
+    system.file("WGCNA_scripts", "scWGCNA_report.Rmd", package = "scWGCNA"), params = list(
       data = data,
       sc.data = sc.data,
       gene.names = gene.names,
@@ -34,7 +39,8 @@ scWGNA.report = function(data,sc.data,gene.names, project.name, sp="Mm", cells=F
       features = features,
       reduction = reduction,
       dir = dir,
-      is.pseudocell = is.pseudocell
+      is.pseudocell = is.pseudocell,
+      GO=GO
     ),
     output_file = paste0(dir,"WGCNA_report_", project.name, "_", format(Sys.Date(), "%d.%m.%y"), ".pdf"),
     output_format = "pdf_document"

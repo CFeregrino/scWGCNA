@@ -22,4 +22,6 @@ Imports:
     network,
     limma,
     knitr,
-    rmarkdown
+    rmarkdown,
+    dynamicTreeCut,
+    tinytex

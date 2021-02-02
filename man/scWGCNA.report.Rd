@@ -27,6 +27,8 @@ scWGNA.report(data,sc.data,gene.names,project.name,sp=Mm,cells=F,features=F,redu
 \item{dir}{The directory to save the output to. It defaults to the working directory}
 
 \item{is.pseudocell}{is the main data pseudocell data? Default is T}
+
+\item{GO}{should GO term enrichment analyses be performed? Default is T}
 }
 \value{
 Saves a report as well as different objects.

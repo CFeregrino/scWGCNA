@@ -2,3 +2,4 @@
 
 export(calculate.pseudocells)
 export(scWGNA.report)
+importFrom(WGCNA,bicor)

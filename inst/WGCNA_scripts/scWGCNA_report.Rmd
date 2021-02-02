@@ -11,6 +11,18 @@ output:
     df_print: paged
 editor_options: 
   chunk_output_type: inline
+params:
+  data: No_data
+  sc.data: No_dataproject
+  project.name: No_name
+  gene.names: No_names
+  cells: No_cells
+  features: No_features
+  reduction: No_reduction
+  dir: No_dir
+  sp: No_sp
+  is.pseudocell: No_info
+  GO: No_GO
 ---
 
 Date: `r format(Sys.Date(), "%d.%m.%y")`
@@ -24,10 +36,14 @@ We need to first set up our working environment.
 
 ```{r Set up, message=FALSE, warning=FALSE, results='hide'}
 
-library(paste0("org.",params$sp,".eg.db"),character.only = T)
+my.date = format(Sys.Date(), "%d.%m.%y")
+
+if (params$GO == T) {
+  library(paste0("org.",params$sp,".eg.db"),character.only = T)
+}
 
 # The following setting is important, do not omit
-backup.options = options
+backup.options = options()
 options(stringsAsFactors = FALSE)
 
 ```
@@ -37,8 +53,6 @@ Get our single cells and the pseudocells to be able to run the analysis
 ```{r From above, message=FALSE, warning=FALSE, results='hide'}
 
 # placeholder for the variables and options we will get from an upper level pipeline
-
-my.date = format(Sys.Date(), "%d.%m.%y")
 
 project_name = params$project.name
 
@@ -196,6 +210,8 @@ nonsig = 1
 
 while(nonsig != 0) {
   
+  my.adjacency =WGCNA::adjacency(datExpr,type = "signed", power = my.power, corFnc = "bicor")
+  
   # Turn adjacency into topological overlap (high overlap if they share the same "neighborhood")
   TOM=WGCNA::TOMsimilarityFromExpr(datExpr,networkType = "signed", TOMType = "signed", power = my.power, corType = "bicor")
   
@@ -231,7 +247,7 @@ while(nonsig != 0) {
   for (i in x) {
     for (j in y) {
       sink("aux")
-      z=table(WGCNA::cutreeDynamic(dendro = geneTree,  method="tree", minClusterSize = i, deepSplit = T, cutHeight = j, verbose = 0))
+      z=table(dynamicTreeCut::cutreeDynamic(dendro = geneTree,  method="tree", minClusterSize = i, deepSplit = T, cutHeight = j, verbose = 0))
       sink(NULL)
       v=data.frame(i,j,dim(z),names(z[1]),unname(z[1]))
       w=rbind(w,v)
@@ -305,7 +321,7 @@ while(nonsig != 0) {
     my.height = cutheight
   }
   
-  dynamicMods = WGCNA::cutreeDynamic(dendro = geneTree,  method="tree", minClusterSize = my.Clsize, deepSplit = T, cutHeight = my.height)
+  dynamicMods = dynamicTreeCut::cutreeDynamic(dendro = geneTree,  method="tree", minClusterSize = my.Clsize, deepSplit = T, cutHeight = my.height)
   
   #dynamicMods = cutreeDynamic(dendro = geneTree, distM = dissTOM, deepSplit = 2, minClusterSize = minModuleSize)
   
@@ -379,7 +395,7 @@ while(nonsig != 0) {
 
 p.MEList = MEList
 
-raw.datExpr = p.Wdata@assays$RNA@scale.data[colnames(datExpr),]
+raw.datExpr = p.Wdata@assays$RNA@data[colnames(datExpr),]
 
 raw.datExpr = t(as.matrix(raw.datExpr))
 
@@ -402,7 +418,7 @@ for (i in 1:length(yy)) {
   
   xx[[i]] = ggplot2::ggplot(toplot[order(p.MEList$averageExpr[,i]),],
                    ggplot2::aes_string(x=colnames(toplot)[1], y=colnames(toplot)[2])) +
-    ggplot2::geom_point(aes_string(color=p.MEList$averageExpr[order(p.MEList$averageExpr[,i]),i]), size=2) +
+    ggplot2::geom_point(ggplot2::aes_string(color=p.MEList$averageExpr[order(p.MEList$averageExpr[,i]),i]), size=2) +
     ggplot2::scale_size(range = c(1, 1)) +
     ggplot2::theme_void() + 
     ggplot2::theme(legend.position="none") +
@@ -425,9 +441,9 @@ WGCNA_data[["modGenes"]] = xy
 WGCNA_data[["modPlots"]] = xx
 WGCNA_data[["genesets"]]= genesets
 WGCNA_data[["TOM"]]= TOM
-WGCNA_data[["adjacency"]]= adjacency
+WGCNA_data[["adjacency"]]= my.adjacency
 
-saveRDS(WGCNA_data, file = paste0(params$dir,"/data/",project_name,"_WGCNA_data.rds"))
+saveRDS(WGCNA_data, file = paste0(params$dir,project_name,"_WGCNA_data.rds"))
 
 ```
 
@@ -435,7 +451,7 @@ To create the visualizations of the actual co-expression networks, we use this c
 
 ```{r Network plotting, message=F}
 # we create a new directory where the network files will be
-my.dirname = paste0(params$dir,"/data/",project_name,"WGCNA_networks/")
+my.dirname = paste0(params$dir,project_name,"WGCNA_networks/")
 
 dir.create(my.dirname)
 
@@ -491,7 +507,7 @@ for (i in 1:length(xx)) {
   # We multiply by 30 to give a good range of sizes, plus 1 to avoid innexistant nodes
   mynodes$membership= (mynodes$membership*30)+1
   
-  mynet = network::set.vertex.attribute(mynet, "membership", mynodes[network.vertex.names(mynet),"membership"])
+  mynet = network::set.vertex.attribute(mynet, "membership", mynodes[network::network.vertex.names(mynet),"membership"])
   
   mynets[[i]] = mynet
   
@@ -502,67 +518,69 @@ for (i in 1:length(xx)) {
 To check the results module by module, we report some GO terms and individual plots, with module sizes and gene names. First the GO terms analyses
 
 ```{r GO analysis, fig.height=10, fig.width=6, message=FALSE}
-#Get the ENSEMBL to ENTREZ list from the BioMart
-
-my.ENS2EG = get(paste0("org.",my.sp,".egENSEMBL2EG"))
-
-IDs=as.list(my.ENS2EG)
-
-#Create two lists, one for the DEGs and one for the GOs
-dewg = list()
-gowg = list()
-
-# A loop that goes through the DEG files we created earlier
-for(i in 1:length(yy)){ #as many clusters as we have
-  dewg[[i]] = xy[[i]] #Read the table
-  ex = sapply(dewg[[i]], function(x) exists(x, my.ENS2EG)) #Which genes have an ENTREZ?
-  dewg[[i]] = dewg[[i]][ex] #Only those genes
-  dewg[[i]] = unlist(IDs[dewg[[i]]]) #The ENTREZ IDs
-  gowg[[i]] = limma::goana(dewg[[i]], species = my.sp, universe = unlist(IDs[rownames(Wdata)])) #The GO analysis
-}
-
-goplots=list()
-goterms=list()
-
-for (i in 1:length(yy)) {
-  toplot=limma::topGO(gowg[[i]], n= 50, ontology = c("BP"))
+if (params$GO==T) {
+  #Get the ENSEMBL to ENTREZ list from the BioMart
   
-  #Change to character and then back to factor, to keep the order from TopGO
-  toplot$Term = as.character(toplot$Term)
-  toplot$Term = factor(toplot$Term, levels = unique(toplot$Term))
+  my.ENS2EG = get(paste0("org.",my.sp,".egENSEMBL2EG"))
   
-  goterms[[i]]=toplot
+  IDs=as.list(my.ENS2EG)
   
+  #Create two lists, one for the DEGs and one for the GOs
+  dewg = list()
+  gowg = list()
+  
+  # A loop that goes through the DEG files we created earlier
+  for(i in 1:length(yy)){ #as many clusters as we have
+    dewg[[i]] = xy[[i]] #Read the table
+    ex = sapply(dewg[[i]], function(x) exists(x, my.ENS2EG)) #Which genes have an ENTREZ?
+    dewg[[i]] = dewg[[i]][ex] #Only those genes
+    dewg[[i]] = unlist(IDs[dewg[[i]]]) #The ENTREZ IDs
+    gowg[[i]] = limma::goana(dewg[[i]], species = my.sp, universe = unlist(IDs[rownames(Wdata)])) #The GO analysis
+  }
+  
+  goplots=list()
+  goterms=list()
+  
+  for (i in 1:length(yy)) {
+    toplot=limma::topGO(gowg[[i]], n= 50, ontology = c("BP"))
+    
+    #Change to character and then back to factor, to keep the order from TopGO
+    toplot$Term = as.character(toplot$Term)
+    toplot$Term = factor(toplot$Term, levels = unique(toplot$Term))
+    
+    goterms[[i]]=toplot
+    
+  }
+  
+  #TO make the acutal plot we're having, we combine all the GOs
+  g.plot = data.frame()
+  topterms = data.frame()
+  
+  for (i in 1:length(goterms)) {
+    topterms = goterms[[i]][1:5,]
+    topterms$cluster = i
+    g.plot = rbind(g.plot, topterms)
+  }
+  
+  g.plot$cluster = as.factor(g.plot$cluster)
+  
+  my.terms = nchar(as.character(g.plot$Term))>45
+  my.gterms = strtrim(g.plot$Term, 45)
+  my.gterms[my.terms] = paste0(my.gterms[my.terms],"...")
+  
+  ggplot2::ggplot(g.plot, ggplot2::aes(x=Term, y=-log10(P.DE), fill=cluster)) +
+      ggplot2::geom_point(aes(shape = cluster), size = 3) +
+      ggplot2::theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+      ggplot2::labs(x="GO Term", y="-log10 p. value") +
+      ggplot2::scale_x_discrete(labels=my.gterms) +
+      ggplot2::scale_fill_manual(name = "Module",
+                        labels = yy,
+                        values = yy) + 
+      ggplot2::scale_shape_manual(name = "Module",
+                         labels = yy,
+                         values = rep(c(21,22,23,24,25),20)) + 
+    ggplot2::coord_flip()
 }
-
-#TO make the acutal plot we're having, we combine all the GOs
-g.plot = data.frame()
-topterms = data.frame()
-
-for (i in 1:length(goterms)) {
-  topterms = goterms[[i]][1:5,]
-  topterms$cluster = i
-  g.plot = rbind(g.plot, topterms)
-}
-
-g.plot$cluster = as.factor(g.plot$cluster)
-
-my.terms = nchar(as.character(g.plot$Term))>45
-my.gterms = strtrim(g.plot$Term, 45)
-my.gterms[my.terms] = paste0(my.gterms[my.terms],"...")
-
-ggplot2::ggplot(g.plot, ggplot2::aes(x=Term, y=-log10(P.DE), fill=cluster)) +
-    ggplot2::geom_point(aes(shape = cluster), size = 3) +
-    ggplot2::theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    ggplot2::labs(x="GO Term", y="-log10 p. value") +
-    ggplot2::scale_x_discrete(labels=my.gterms) +
-    ggplot2::scale_fill_manual(name = "Module",
-                      labels = yy,
-                      values = yy) + 
-    ggplot2::scale_shape_manual(name = "Module",
-                       labels = yy,
-                       values = rep(c(21,22,23,24,25),20)) + 
-  ggplot2::coord_flip()
 
 ```
 
@@ -577,9 +595,11 @@ for(i in 1:length(xx)){
   ktable1 = data.frame( matrix( c(gnames[xy[[i]],2],rep(" ", 10-length(gnames[xy[[i]],2])%%10 )), ncol = 10, byrow = T ) )
   colnames(ktable1) = rep(".", 10)
   
-  # Another table, where we put the top 10 GO terms, in two columns
-  ktable2 = data.frame( matrix( as.character(goterms[[i]][1:10,1]), ncol = 2, byrow = F ) )
-  colnames(ktable2) = rep(".", 2)
+  if (params$GO == T) {
+    # Another table, where we put the top 10 GO terms, in two columns
+    ktable2 = data.frame( matrix( as.character(goterms[[i]][1:10,1]), ncol = 2, byrow = F ) )
+    colnames(ktable2) = rep(".", 2)
+    }
   
   # We make a plot in which we show the mean expression level of the co-expression module
   
@@ -587,7 +607,7 @@ for(i in 1:length(xx)){
   
   myplot = ggplot2::ggplot(toplot[order(p.MEList$averageExpr[,i]),],
                    ggplot2::aes_string(x=colnames(toplot)[1], y=colnames(toplot)[2])) +
-      ggplot2::geom_point(aes_string(color=p.MEList$averageExpr[order(p.MEList$averageExpr[,i]),i])) +
+      ggplot2::geom_point(ggplot2::aes_string(color=p.MEList$averageExpr[order(p.MEList$averageExpr[,i]),i])) +
       ggplot2::scale_size(range = c(1, 1)) +
       ggplot2::theme_void() +
       ggplot2::scale_colour_gradientn(colours = c("gray90", "gray90", yy[i], yy[i])) +
@@ -597,16 +617,16 @@ for(i in 1:length(xx)){
   
   mynetplot = GGally::ggnet2(mynet,
                          mode = "fruchtermanreingold",
-                         layout.par = list(repulse.rad=network.size(mynet)^1.1,
-                                           area=network.size(mynet)^2.3), # Give space in the middle
-                         node.size = get.vertex.attribute(mynet,'membership'), max_size = 22, #The size of the nodes
+                         layout.par = list(repulse.rad=network::network.size(mynet)^1.1,
+                                           area=network::network.size(mynet)^2.3), # Give space in the middle
+                         node.size = network::get.vertex.attribute(mynet,'membership'), max_size = 22, #The size of the nodes
                          node.color = levels(as.factor(dynamicColors))[i], # The color of the module
                          edge.size = "weight",
                          edge.color = "black",
-                         edge.alpha = get.edge.attribute(mynet,'weight01'),
+                         edge.alpha = network::get.edge.attribute(mynet,'weight01'),
                          ) +
     ggplot2::theme(legend.position="none") +
-    ggplot2::geom_label(ggplot2::aes(label=gnames[network.vertex.names(mynet),2]),
+    ggplot2::geom_label(ggplot2::aes(label=gnames[network::network.vertex.names(mynet),2]),
                fill = levels(as.factor(dynamicColors))[i],
                alpha = 0.5,
                color=lcols[i],
@@ -623,8 +643,11 @@ for(i in 1:length(xx)){
   # The other two tables we just made
   print(knitr::kable(ktable1))
   cat("\n")
-  print(knitr::kable(ktable2))
-  cat("\n")
+  if (params$GO == T) {
+    print(knitr::kable(ktable2))
+    cat("\n")
+  }
+  
 
 }
 
