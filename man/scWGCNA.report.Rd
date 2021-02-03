@@ -8,30 +8,30 @@
 scWGNA.report(data,sc.data,gene.names,project.name,sp=Mm,cells=F,features=F,reduction="tsne",dir="./",is.pseudocell=T)
 }
 \arguments{
-\item{data}{The expression data to run the analysis in. In a Seurat object. Can be pseudocell or single-cell data. We recommend pseudocells}
+\item{data}{Seurat object. The expression data used to run the co-expression analysis. Can be pseudocell or single-cell data but pseudocells are recommended.}
 
-\item{sc.data}{The single cell data, if running on single cell data already, please repear the argument}
+\item{sc.data}{Seurat object. The single cell data, if running on single cell data already, please repeat the argument.}
 
-\item{gene.names}{Translation of the identifiers found in the expression data. Two columns: 1= ids present in expression matrix, 2= names to appear in plots. Can be the same}
+\item{gene.names}{Data frame. Two columns: 1= ids present in expression matrix, 2= names to appear in plots. Can be the same, but the two columns are necessary}
 
-\item{project.name}{The name of the project, will be used to save objects and the report}
+\item{project.name}{String. The name of the project, will be used to name the saved objects and the report.}
 
-\item{sp}{The species used for the analysis in string form. Only two letters in the format Sp. Defaults to "Mm"}
+\item{sp}{String. The species used for the analysis in string form. Only two letters in the format Sp. Defaults to "Mm". Check that package "org.Sp.eg.db" exists}
 
-\item{cells}{Are certain clusters to be used? Please use identities and not cell names}
+\item{cells}{Variable. Are certain clusters to be used? Please use group identities and not cell names}
 
-\item{features}{The features to be used for the analysis. Default is F, which makes the script calculate variable genes}
+\item{features}{Variable. The features to be used for the analysis. Default is F, which makes the script calculate variable genes}
 
-\item{reduction}{The reduction to use for plots. It must be present in the @reductions slot of sc.data. Default is "tsne"}
+\item{reduction}{String. The reduction to use for plots. It must be present in the @reductions slot of sc.data. Default is "tsne"}
 
-\item{dir}{The directory to save the output to. It defaults to the working directory}
+\item{dir}{String. The directory where the output will be saved. It defaults to the working directory}
 
-\item{is.pseudocell}{is the main data pseudocell data? Default is T}
+\item{is.pseudocell}{Logical. Is the main data pseudocell data? Default is T}
 
-\item{GO}{should GO term enrichment analyses be performed? Default is T}
+\item{GO}{Logical. Should GO term enrichment analyses be performed? Default is T}
 }
 \value{
-Saves a report as well as different objects.
+No inline output. It saves an html report, as well as a list object with the resulting WGCNA data. They are both named using the project name and the date. It also creates a folder containing the network files per module.
 }
 \description{
 This function runs our semi-automatic single-cell WGCNA analysis. It runs in an iterative way. Based on single-cell or pseudocell data.

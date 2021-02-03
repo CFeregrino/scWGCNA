@@ -28,7 +28,7 @@ params:
 Date: `r format(Sys.Date(), "%d.%m.%y")`
 
 We use WGCNA to run an iterative analysis on a data set. 
-We are calculating HVG in the script, but using a threshold of 0.25 for the dispersion.      
+If no features are prided, HVGs are calculated in the script in the script, using Seurat, the mvp method a threshold of 0.25 for the dispersion.      
 
 ## Pre-analysis
 
@@ -48,7 +48,8 @@ options(stringsAsFactors = FALSE)
 
 ```
 
-Get our single cells and the pseudocells to be able to run the analysis
+Parse all the parameters and data we need to be able to run the analysis.
+We need the data in seurat format. This must contain at least 20 samples (no problems with sc data), according to the [documentation of the package itself](https://horvath.genetics.ucla.edu/html/CoexpressionNetwork/Rpackages/WGCNA/faq.html).
 
 ```{r From above, message=FALSE, warning=FALSE, results='hide'}
 
@@ -59,6 +60,7 @@ project_name = params$project.name
 p.Wdata = params$sc.data
 
 gnames = params$gene.names
+gnames[,2]= as.character(gnames[,2])
 rownames(gnames) = gnames[,1]
 
 Wdata = params$data
@@ -78,7 +80,7 @@ is.pseudocell = params$is.pseudocell
 
 ```
 
-We need the data in either seurat or data-frame format. This must contain at least 20 samples (no problems with sc data), according to the [documentation of the package itself](https://horvath.genetics.ucla.edu/html/CoexpressionNetwork/Rpackages/WGCNA/faq.html).
+Now we calculate the genes we will use.
 
 ```{r pre-process the data}
 
@@ -391,6 +393,8 @@ while(nonsig != 0) {
 }
 ```
 
+We calculate here the expression of genes using the single-cell data
+
 ```{r raw eigengenes}
 
 p.MEList = MEList
@@ -408,7 +412,7 @@ p.MEList = raw.MEList
 ## Modules of co-expression
 
 For single cells
-We can see what are the expression levels of our co-expression modules. If we provided a seurat object. We look, in this case, at a tSNE
+We can see what are the expression levels of our co-expression modulesin the single cells. Using the dimensionality reduction provided. Default is a tSNE  
 
 ```{r Plot multiexpression}
 xx=list()
@@ -443,7 +447,7 @@ WGCNA_data[["genesets"]]= genesets
 WGCNA_data[["TOM"]]= TOM
 WGCNA_data[["adjacency"]]= my.adjacency
 
-saveRDS(WGCNA_data, file = paste0(params$dir,project_name,"_WGCNA_data.rds"))
+saveRDS(WGCNA_data, file = paste0(params$dir,project_name,"_WGCNA_data_",my.date,".rds"))
 
 ```
 
@@ -451,7 +455,7 @@ To create the visualizations of the actual co-expression networks, we use this c
 
 ```{r Network plotting, message=F}
 # we create a new directory where the network files will be
-my.dirname = paste0(params$dir,project_name,"WGCNA_networks/")
+my.dirname = paste0(params$dir,project_name,"WGCNA_networks_",my.date,"/")
 
 dir.create(my.dirname)
 
@@ -634,19 +638,18 @@ for(i in 1:length(xx)){
   
   # We put our mean expression plot toghether with the network plot
   gridExtra::grid.arrange(grobs=list(myplot,mynetplot), nrow=2)
-  plot.new()
-  dev.off()
+  # # plot.new()
+  # # dev.off()
   cat("\n")
   # A table showing the number, color and size of the module
   print(knitr::kable(data.frame(module=i, color=names(table(dynamicColors))[i], size=unname(table(dynamicColors)[i]))))
-  cat("\n")
+  # cat("\n")
   # The other two tables we just made
   print(knitr::kable(ktable1))
+  # if (params$GO == T) {
+  #   print(knitr::kable(ktable2))
+  # }
   cat("\n")
-  if (params$GO == T) {
-    print(knitr::kable(ktable2))
-    cat("\n")
-  }
   
 
 }
