@@ -41,7 +41,7 @@ scWGNA.report = function(data,sc.data,gene.names, project.name, sp="Mm", cells=F
   #If running GO analyses
   if (GO==T) {
     #Check that the species package of biomart is installed
-     if (!paste0(gnames[,2]) %in% rownames(utils::installed.packages())) {
+     if (!paste0("org.",sp,".eg.db") %in% rownames(utils::installed.packages())) {
       stop(paste0("org.",sp,".eg.db")," is not installed. This is necessary to carry out GO Term analyses. Please install and try again or run the analyses with GO=F")
     }
   }
