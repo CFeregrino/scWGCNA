@@ -28,5 +28,5 @@ A seurat object of aggregated pseudocells. With average expression. The slot mis
 This function calculates pseudocells from a Seurat object, based on pre-calculated cell clusters and dimentionality reduction.
 }
 \examples{
-ps.pmbc_small=calculate.pseudocells(Seurat::pbmc_small, dims = 1:10)
+ps.pbmc_small=calculate.pseudocells(Seurat::pbmc_small, dims = 1:10)
 }

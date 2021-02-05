@@ -19,11 +19,6 @@ params:
   ortho: No_ortho
   ortho.sp: No_ortho.sp
   groups: No_groups
-
-  # dir: No_dir
-  # sp: No_sp
-  # is.pseudocell: No_info
-  # GO: No_GO
 ---
 Date: `r format(Sys.Date(), "%d.%m.%y")`
 
@@ -61,8 +56,10 @@ Wtest_names = params$test.names
 
 my.ortho.sp = params$ortho.sp
 
+my.test = params$test
+
 for (i in 1:length(my.test)) {
-  my.test[[i]] = subset(my.test[[i]], features = my.ortho[,my.ortho.sp[i]])
+  my.test[[i]] = Seurat::SubsetData(my.test[[i]], features = my.ortho[,my.ortho.sp[i]])
 }
 
 # Project name, will come out in files and folders
@@ -100,12 +97,12 @@ Expr = Expr[which(Expr %in% my.ortho[,1])]
 #Change the ortho rownames to the reference species, to be able to index it
 rownames(my.ortho) = my.ortho[,1]
 #A subset of the ortho, using only the genes in the modules
-Expr = my.ortho[Expr,]
+Expr = my.ortho[Expr,,drop=F]
 
 #Each of the test sets
 for (t in 1:length(Wtest)) {
   #Take only genes that are present in all of our expression matrices.
-  Expr=Expr[which(Expr[,my.ortho.sp[t]] %in% rownames(Wtest[[t]]@assays$RNA@counts)),]
+  Expr=Expr[which(Expr[,my.ortho.sp[t]] %in% rownames(Wtest[[t]]@assays$RNA@counts)),,drop=F]
 }
 
 # Retrieve gene id's from the reference species.
@@ -124,12 +121,14 @@ for (t in 1:length(Wtest)) {
 #There might be genes present in our samples, but not expressed, or not variable. Take them all
 nonex=c()
 for (i in datExpr) {
-  nonex = c(nonex,which(!goodGenes(i)))
+  nonex = c(nonex,which(!WGCNA::goodGenes(i)))
 }
 nonex = unique(nonex)
 
 #Take then these genes out of the genes we will use to test.
-Expr = colnames(datExpr[[1]])[-nonex]
+if (length(nonex)) {
+    Expr = colnames(datExpr[[1]])[-nonex]
+} else {Expr = colnames(datExpr[[1]])}
 
 #Take only those genes in the expression matrix
 for (t in 1:length(datExpr)) {
@@ -170,7 +169,7 @@ ggplot2::ggplot(my.percent, ggplot2::aes(x=percent.refcol, y=percent.Freq,fill =
   ggplot2::geom_point( size =3.5, shape=21 ) +
   ggplot2::scale_fill_manual(values = as.character(my.percent$percent.refcol)) +
   ggplot2::theme_minimal() +
-  ggplot2::theme(legend.position ="none", text = element_text(size=15), axis.text.x = element_text(angle=45, hjust=1)) +
+  ggplot2::theme(legend.position ="none", text = ggplot2::element_text(size=15), axis.text.x = ggplot2::element_text(angle=45, hjust=1)) +
   ggplot2::labs(title = "Fraction of genes 1-to-1 orthologs,\nand present in test samples", x="Module", y="Fraction") +
   ggplot2::ylim(0, 1) 
 
@@ -341,7 +340,7 @@ if (class(my.grouping) == "list") {
     my.scfm + 
     my.ssm +
     ggplot2::theme_classic() +
-    ggplot2::theme(legend.text = element_text(size = 8), legend.title = element_text(size=10)) +
+    ggplot2::theme(legend.text = ggplot2::element_text(size = 8), legend.title = ggplot2::element_text(size=10)) +
     ggplot2::guides(fill = FALSE, alpha = F, color=F) +
     ggplot2::scale_x_continuous(trans='log2', expand = c(0.1, 0)) +
     ggplot2::scale_y_continuous(trans = "reverse", expand = c(0.1,0)) +
@@ -353,13 +352,13 @@ if (class(my.grouping) == "list") {
   if (length(levels(my.plotData))>5) {
       my.gp = ggplot2::geom_point(ggplot2::aes(color=Cols, shape=Sample), size=3.5)
       my.scfm = ggplot2::scale_color_manual(values= as.character(unique(plotData$Cols)))
-      my.ssm = ggplot2::scale_shape_manual(name= "Sample:",values= c(0:25), labels=Wtest_names[my.grouping[[i]]])
+      my.ssm = ggplot2::scale_shape_manual(name= "Sample:",values= c(0:25), labels=Wtest_names)
       my.gpa = ggplot2::geom_point(ggplot2::aes(color=Cols, shape=Sample, alpha=alpha), size=3.5)
     } else{
       my.gp = ggplot2::geom_point(ggplot2::aes(fill=Cols, shape=Sample), size=3.5)
       my.scfm = ggplot2::scale_fill_manual(values= as.character(unique(plotData$Cols)))
-      my.ssm = ggplot2::scale_shape_manual(name= "Sample:",values= c(21:25), labels=Wtest_names[my.grouping[[i]]])
-      my.gpa = ggplot2::geom_point(aes(fill=Cols, shape=Sample, alpha=alpha), size=3.5)
+      my.ssm = ggplot2::scale_shape_manual(name= "Sample:",values= c(21:25), labels=Wtest_names)
+      my.gpa = ggplot2::geom_point(ggplot2::aes(fill=Cols, shape=Sample, alpha=alpha), size=3.5)
     }
   p[[1]] = ggplot2::ggplot(plotData, ggplot2::aes(x=Size, y=Zsum, label=Cols)) + 
     ggplot2::geom_hline(yintercept = c(2,10), linetype="dashed", color=c("red", "limegreen")) +
@@ -378,7 +377,7 @@ if (class(my.grouping) == "list") {
     my.scfm + 
     my.ssm +
     ggplot2::theme_classic() +
-    ggplot2::theme(legend.text = element_text(size = 8), legend.title = element_text(size=10)) +
+    ggplot2::theme(legend.text = ggplot2::element_text(size = 8), legend.title = ggplot2::element_text(size=10)) +
     ggplot2::guides(fill = FALSE, alpha = F, color=F) +
     ggplot2::scale_x_continuous(trans='log2', expand = c(0.1, 0)) +
     ggplot2::scale_y_continuous(trans = "reverse", expand = c(0.1,0)) +
@@ -469,7 +468,7 @@ if (class(my.grouping) == "list") {
     ggplot2::theme_classic() +
     ggplot2::scale_x_continuous(trans='log2', expand = c(0.1, 0)) +
     ggplot2::labs(x ="Module size", y = "Connectivity") + 
-    ggplot2::theme(legend.text = element_text(size = 8), legend.title = element_text(size=10)) +
+    ggplot2::theme(legend.text = ggplot2::element_text(size = 8), legend.title = ggplot2::element_text(size=10)) +
     ggplot2::guides(fill = FALSE, color=F) +
     ggplot2::ylim(my.lim)
   
@@ -479,11 +478,11 @@ if (class(my.grouping) == "list") {
   if (length(levels(my.plotData))>5) {
       my.gp = ggplot2::geom_point(ggplot2::aes(color=Cols, shape=Sample), size=3.5)
       my.scfm = ggplot2::scale_color_manual(values= as.character(unique(plotData$Cols)))
-      my.ssm = ggplot2::scale_shape_manual(name= "Sample:",values= c(0:25), labels=Wtest_names[my.grouping[[i]]])
+      my.ssm = ggplot2::scale_shape_manual(name= "Sample:",values= c(0:25), labels=Wtest_names)
     } else{
       my.gp = ggplot2::geom_point(ggplot2::aes(fill=Cols, shape=Sample), size=3.5)
       my.scfm = ggplot2::scale_fill_manual(values= as.character(unique(plotData$Cols)))
-      my.ssm = ggplot2::scale_shape_manual(name= "Sample:",values= c(21:25), labels=Wtest_names[my.grouping[[i]]])
+      my.ssm = ggplot2::scale_shape_manual(name= "Sample:",values= c(21:25), labels=Wtest_names)
     }
   p[[1]] = ggplot2::ggplot(plotData, ggplot2::aes(x=Size, y=Density, label=Cols)) + 
     ggplot2::geom_hline(yintercept = c(2,10), linetype="dashed", color=c("red", "limegreen")) +
@@ -506,7 +505,7 @@ if (class(my.grouping) == "list") {
     ggplot2::theme_classic() +
     ggplot2::scale_x_continuous(trans='log2', expand = c(0.1, 0)) +
     ggplot2::labs(x ="Module size", y = "Connectivity") +
-    ggplot2::theme(legend.text = element_text(size = 8), legend.title = element_text(size=10)) +
+    ggplot2::theme(legend.text = ggplot2::element_text(size = 8), legend.title = ggplot2::element_text(size=10)) +
     ggplot2::guides(fill = FALSE, color=F) +
     ggplot2::ylim(my.lim)
   
@@ -520,6 +519,8 @@ Saving the preservation data under  `r paste0("./data/",project_name,"_modulepre
 
 ```{r saving}
 
-saveRDS(mp, paste0("./data/",project_name,"_modulepreservation_",format(Sys.Date(), "%d%m%y"),".rds"))
+saveRDS(mp, paste0(project_name,"_modulepreservation_",format(Sys.Date(), "%d%m%y"),".rds"))
+
+options(backup.options)
 
 ```

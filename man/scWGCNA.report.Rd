@@ -5,7 +5,7 @@
 \alias{scWGNA.report}
 \title{Runs a semi-automatic, iterative scWGCNA analysis}
 \usage{
-scWGNA.report(data,sc.data,gene.names,project.name,sp=Mm,cells=F,features=F,reduction="tsne",dir="./",is.pseudocell=T)
+scWGNA.report(data,sc.data,gene.names,project.name,sp=Mm,cells=F,features=F,reduction="tsne",dir="./",is.pseudocell=T,GO=T,interactive=T)
 }
 \arguments{
 \item{data}{Seurat object. The expression data used to run the co-expression analysis. Can be pseudocell or single-cell data but pseudocells are recommended.}
@@ -29,10 +29,22 @@ scWGNA.report(data,sc.data,gene.names,project.name,sp=Mm,cells=F,features=F,redu
 \item{is.pseudocell}{Logical. Is the main data pseudocell data? Default is T}
 
 \item{GO}{Logical. Should GO term enrichment analyses be performed? Default is T}
+
+\item{interactive}{Logical. Turns off the initial question to continue with the analyses.}
 }
 \value{
 No inline output. It saves an html report, as well as a list object with the resulting WGCNA data. They are both named using the project name and the date. It also creates a folder containing the network files per module.
 }
 \description{
 This function runs our semi-automatic single-cell WGCNA analysis. It runs in an iterative way. Based on single-cell or pseudocell data.
+}
+\examples{
+# Calculate pseudocells
+ps.pbmc_small=calculate.pseudocells(Seurat::pbmc_small, dims = 1:10)
+
+gnames= data.frame(a=as.character(rownames(ps.pbmc_small))); gnames[,2]=gnames[,1]
+
+# Use pseudocells and single cells to calculate WGCNA
+scWGNA.report(data = ps.pbmc_small, sc.data = Seurat::pbmc_small, gene.names = gnames, project.name = "test", sp = "Hs")
+
 }
