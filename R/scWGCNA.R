@@ -25,7 +25,7 @@
 #' gnames= data.frame(a=as.character(rownames(ps.pbmc_small))); gnames[,2]=gnames[,1]
 #' 
 #' # Use pseudocells and single cells to calculate WGCNA
-#' scWGNA.report(data = ps.pbmc_small, sc.data = Seurat::pbmc_small, gene.names = gnames, project.name = "test", sp = "Hs")
+#' #scWGNA.report(data = ps.pbmc_small, sc.data = Seurat::pbmc_small, gene.names = gnames, project.name = "test", sp = "Hs")
 #' 
 
 scWGNA.report = function(data,sc.data,gene.names, project.name, sp="Mm", cells=F, features=F, reduction="tsne", dir="./", is.pseudocell=T,GO=T,interactive=T) {

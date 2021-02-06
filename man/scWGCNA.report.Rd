@@ -45,6 +45,6 @@ ps.pbmc_small=calculate.pseudocells(Seurat::pbmc_small, dims = 1:10)
 gnames= data.frame(a=as.character(rownames(ps.pbmc_small))); gnames[,2]=gnames[,1]
 
 # Use pseudocells and single cells to calculate WGCNA
-scWGNA.report(data = ps.pbmc_small, sc.data = Seurat::pbmc_small, gene.names = gnames, project.name = "test", sp = "Hs")
+#scWGNA.report(data = ps.pbmc_small, sc.data = Seurat::pbmc_small, gene.names = gnames, project.name = "test", sp = "Hs")
 
 }
