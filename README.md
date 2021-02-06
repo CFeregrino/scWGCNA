@@ -8,7 +8,7 @@ scWGCNA works with Seurat objects and produces integrated html reports of WGCNA 
 
 To instal scWGCNA run
 ```
-devtools::install_github("cferegrino/scWGCNA")
+devtools::install_github("cferegrino/scWGCNA", ref="main")
 ```
 
 ## Applications
