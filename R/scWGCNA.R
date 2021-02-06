@@ -1,8 +1,6 @@
 #' Runs a semi-automatic, iterative scWGCNA analysis
 #' 
 #' This function runs our semi-automatic single-cell WGCNA analysis. It runs in an iterative way. Based on single-cell or pseudocell data.
-#' @name scWGCNA.report
-#' @usage scWGNA.report(data,sc.data,gene.names,project.name,sp=Mm,cells=F,features=F,reduction="tsne",dir="./",is.pseudocell=T,GO=T,interactive=T)
 #' @param data Seurat object. The expression data used to run the co-expression analysis. Can be pseudocell or single-cell data but pseudocells are recommended.
 #' @param sc.data Seurat object. The single cell data, if running on single cell data already, please repeat the argument.
 #' @param gene.names Data frame. Two columns: 1= ids present in expression matrix, 2= names to appear in plots. Can be the same, but the two columns are necessary
@@ -14,7 +12,7 @@
 #' @param dir String. The directory where the output will be saved. It defaults to the working directory
 #' @param is.pseudocell Logical. Is the main data pseudocell data? Default is T
 #' @param GO Logical. Should GO term enrichment analyses be performed? Default is T
-#' @param interactive Logical. Turns off the initial question to continue with the analyses.
+#' @param ask Logical. Turns off the initial question to continue with the analyses.
 #' @return No inline output. It saves an html report, as well as a list object with the resulting WGCNA data. They are both named using the project name and the date. It also creates a folder containing the network files per module.
 #' @export
 #' @importFrom WGCNA bicor
@@ -25,12 +23,20 @@
 #' gnames= data.frame(a=as.character(rownames(ps.pbmc_small))); gnames[,2]=gnames[,1]
 #' 
 #' # Use pseudocells and single cells to calculate WGCNA
-#' #scWGNA.report(data = ps.pbmc_small, sc.data = Seurat::pbmc_small, gene.names = gnames, project.name = "test", sp = "Hs")
+#' scWGNA.report(data = ps.pbmc_small,
+#'   sc.data = Seurat::pbmc_small,
+#'   gene.names = gnames,
+#'   project.name = "test",
+#'   sp="Hs")
 #' 
 
-scWGNA.report = function(data,sc.data,gene.names, project.name, sp="Mm", cells=F, features=F, reduction="tsne", dir="./", is.pseudocell=T,GO=T,interactive=T) {
+scWGNA.report = function(data,sc.data,gene.names, project.name, sp="Mm", cells=F, features=F, reduction="tsne", dir="./", is.pseudocell=T,GO=T,ask=T) {
   
-  if (interactive) {
+  if (ask) {
+    if(!interactive()){
+      return(cat("Please either run on interactive mode or define ask=F"))
+    }
+    
     my.question <- utils::menu(c("Y", "N"), title = "WARNING: This funciton might take a long time, depending on the data, and will make changes in your computer (save different files).
                              Would you like to continue? (Y/N)")
     if(my.question == 2){

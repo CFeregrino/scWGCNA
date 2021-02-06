@@ -1,8 +1,6 @@
 #' Calculates pseudocells from a Seurat object
 #' 
 #' This function calculates pseudocells from a Seurat object, based on pre-calculated cell clusters and dimentionality reduction.
-#' @name calculate.pseudocells
-#' @usage calculate.pseudocells(seurat,seeds=0.2,nn = 10,reduction="pca",dims=1:20,features=NULL,cells= NULL)
 #' @param seurat The seurat object, with pre-computed PCA or other reductions, and the relevant clustering as IDs
 #' @param seeds The proportion of cells to be used as seeds. Alternatively, a string with the name of the seeds to use. Numeric between 0.1 and 0.9 or string. Default 0.2
 #' @param nn Number of nearest neighbors to compute and use for pseudocell aggregation. Default 10
@@ -19,12 +17,12 @@ calculate.pseudocells <- function(seurat, seeds=0.2, nn = 10, reduction = "pca",
 
   #if we're using a subset of the cells
   if (!is.null(cells)) {
-    seurat = Seurat::SubsetData(seurat, idents=cells)
+    seurat = subset(seurat, idents=cells)
   }
   
   #if we're using a subset of the features / genes
   if (!is.null(features)) {
-    seurat = Seurat::SubsetData(seurat, features=features)
+    seurat = subset(seurat, features=features)
   }
   
   # Do the nn calculation, using seurat
@@ -77,7 +75,7 @@ calculate.pseudocells <- function(seurat, seeds=0.2, nn = 10, reduction = "pca",
   #Only keep the cells that would be aggregated
   nn.matrix <- data.frame(nn.matrix[,colSums(nn.matrix) > 0 ])
   
-  message(ncol(nn.matrix)," out of ", ncol(seurat)," Cells will be agreggated into ",nrow(nn.matrix),"Pseudocells")
+  message(ncol(nn.matrix)," out of ", ncol(seurat)," Cells will be agreggated into ",nrow(nn.matrix)," Pseudocells")
   
   #create a data frame, to keep record of cells and pseudocells. Non-asigned cells are 00
   my.pseudocells = data.frame(pseudocell = rep("00",nrow(seurat@meta.data)), row.names = rownames(seurat@meta.data))
@@ -114,7 +112,7 @@ calculate.pseudocells <- function(seurat, seeds=0.2, nn = 10, reduction = "pca",
   }
   
   # Make a new seurat object, using only the cells we assigned
-  ps.seurat = Seurat::SubsetData(seurat, cells = rownames(my.pseudocells)[my.pseudocells$pseudocell != "00"])
+  ps.seurat = subset(seurat, cells = rownames(my.pseudocells)[my.pseudocells$pseudocell != "00"])
   
   # Add a new metadata column, with the pseudocell (seeds) info and set the identity
   ps.seurat = Seurat::AddMetaData(object = ps.seurat, metadata = my.pseudocells, col.name = "pseudo.ident")

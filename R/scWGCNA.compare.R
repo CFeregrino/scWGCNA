@@ -1,8 +1,6 @@
 #' Runs a comparative scWGCNA analysis
 #' 
 #' This function runs a WGCNA analysis adapted for single cells. Based on single-cell or pseudocell data.
-#' @name scWGCNA.compare.report
-#' @usage scWGNA.compare.report(data,test,test.names,project.name,ortho,ortho.sp,groups,dir="./",interactive=T)
 #' @param data Seurat object. The WGCNA data to use as reference for comparative analysis. Output from scWGCNA.report.
 #' @param test List of seurat objects. The samples to test conservation in. If data is calculated on pseudocells, these should also be pseudocells
 #' @param test.names Vector of strings. Contains the names for each of the samples in test.

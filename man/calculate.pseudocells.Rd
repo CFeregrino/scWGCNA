@@ -4,7 +4,15 @@
 \alias{calculate.pseudocells}
 \title{Calculates pseudocells from a Seurat object}
 \usage{
-calculate.pseudocells(seurat,seeds=0.2,nn = 10,reduction="pca",dims=1:20,features=NULL,cells= NULL)
+calculate.pseudocells(
+  seurat,
+  seeds = 0.2,
+  nn = 10,
+  reduction = "pca",
+  dims = 1:20,
+  features = NULL,
+  cells = NULL
+)
 }
 \arguments{
 \item{seurat}{The seurat object, with pre-computed PCA or other reductions, and the relevant clustering as IDs}
