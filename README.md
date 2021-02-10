@@ -4,27 +4,29 @@ The functionality is presented in  <a href="https://doi.org/10.1101/2021.02.09.4
 
 Our package is still in beta testing and not fully functional, but the scripts in the "int" folder can be accessed and used to perform the WGCNA analyses.
 
-scWGCNA works with Seurat objects and produces integrated html reports of WGCNA analyses.
+scWGCNA works with Seurat objects and produces integrated HTML reports of WGCNA analyses.
 
-## Instalation
+## Installation
 
-To instal scWGCNA run
+To install scWGCNA run in R:
 ```
 devtools::install_github("cferegrino/scWGCNA", ref="main")
+library(scWGCNA)
+
 ```
 
 ## Applications
 * Calculate pseudocells from a Seurat object with pre.calculated PCA (or other reductions) and cell clusters
 ```
-calculate.psedocells(seurat, seeds=0.2, nn = 10, reduction = "pca")
+calculate.pseudocells(seurat, seeds=0.2, nn = 10, reduction = "pca")
 ```
 * Perform WCGNA analyses and output an integrated HTML report
 ```
-scWGNA.report(data,sc.data,gene.names,project.name,sp="Mm")
+scWGNA.report(data, sc.data, gene.names, project.name, sp="Mm")
 ```
 * Perform comparative WCGNA analyses and output an integrated HTML report
 ```
-scWGNA.compare.report(data,test,test.names,project.name,ortho,ortho.sp)
+scWGNA.compare.report(data, test, test.names, project.name, ortho, ortho.sp)
 ```
 ## References
 
