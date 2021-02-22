@@ -429,7 +429,7 @@ We can see what are the expression levels of our co-expression modulesin the sin
  xx=list()
  yy=c(levels(as.factor(dynamicColors)))
 for (i in 1:length(yy)) {
-  toplot = data.frame(p.Wdata@reductions[[my.dr]]@cell.embeddings)
+  toplot = data.frame(Seurat::Embeddings(p.Wdata[[my.dr]]))
 
   xx[[i]] = ggplot2::ggplot(toplot[order(p.MEList$averageExpr[,i]),],
                    ggplot2::aes_string(x=colnames(toplot)[1], y=colnames(toplot)[2])) +
@@ -619,7 +619,7 @@ for(i in 1:length(xx)){
 
   # We make a plot in which we show the mean expression level of the co-expression module
 
-  toplot = data.frame(p.Wdata@reductions[[my.dr]]@cell.embeddings)
+  toplot = data.frame(Seurat::Embeddings(p.Wdata[[my.dr]]))
 
   myplot = ggplot2::ggplot(toplot[order(p.MEList$averageExpr[,i]),],
                    ggplot2::aes_string(x=colnames(toplot)[1], y=colnames(toplot)[2])) +
