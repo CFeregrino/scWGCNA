@@ -12,6 +12,7 @@
 #' @param dir String. The directory where the output will be saved. It defaults to the working directory
 #' @param is.pseudocell Logical. Is the main data pseudocell data? Default is T
 #' @param GO Logical. Should GO term enrichment analyses be performed? Default is T
+#' @param min.cells Numeric. The minimum cells in which genes need to be expressed, to be considered for variable genes calculation
 #' @param ask Logical. Turns off the initial question to continue with the analyses.
 #' @return No inline output. It saves an html report, as well as a list object with the resulting WGCNA data. They are both named using the project name and the date. It also creates a folder containing the network files per module.
 #' @export
@@ -30,7 +31,7 @@
 #'   sp="Hs")
 #' 
 
-scWGNA.report = function(data,sc.data,gene.names, project.name, sp="Mm", cells=F, features=F, reduction="tsne", dir="./", is.pseudocell=T,GO=F,ask=T) {
+scWGNA.report = function(data,sc.data,gene.names, project.name, sp="Mm", cells=F, features=F, reduction="tsne", dir="./", is.pseudocell=T,GO=F,min.cells=10,ask=T) {
   
   if (ask) {
     if(!interactive()){
@@ -55,7 +56,7 @@ scWGNA.report = function(data,sc.data,gene.names, project.name, sp="Mm", cells=F
   # Knit the report
   rmarkdown::render(
     system.file("WGCNA_scripts", "scWGCNA_report.Rmd", package = "scWGCNA"), params = list(
-      #Parse the parametes
+      #Parse the parameters
       data = data,
       sc.data = sc.data,
       gene.names = gene.names,

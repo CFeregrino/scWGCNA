@@ -16,6 +16,7 @@ scWGNA.report(
   dir = "./",
   is.pseudocell = T,
   GO = F,
+  min.cells = 10,
   ask = T
 )
 }
@@ -41,6 +42,8 @@ scWGNA.report(
 \item{is.pseudocell}{Logical. Is the main data pseudocell data? Default is T}
 
 \item{GO}{Logical. Should GO term enrichment analyses be performed? Default is T}
+
+\item{min.cells}{Numeric. The minimum cells in which genes need to be expressed, to be considered for variable genes calculation}
 
 \item{ask}{Logical. Turns off the initial question to continue with the analyses.}
 }
