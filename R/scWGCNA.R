@@ -30,7 +30,7 @@
 #'   sp="Hs")
 #' 
 
-scWGNA.report = function(data,sc.data,gene.names, project.name, sp="Mm", cells=F, features=F, reduction="tsne", dir="./", is.pseudocell=T,GO=T,ask=T) {
+scWGNA.report = function(data,sc.data,gene.names, project.name, sp="Mm", cells=F, features=F, reduction="tsne", dir="./", is.pseudocell=T,GO=F,ask=T) {
   
   if (ask) {
     if(!interactive()){

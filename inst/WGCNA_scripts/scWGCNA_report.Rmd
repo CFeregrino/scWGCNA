@@ -86,7 +86,7 @@ Now we calculate the genes we will use.
 
 # If we need to subset the data
 if (my.subset) {
-  p.Wdata = Seurat::SubsetData(p.Wdata, idents=my.subset)
+  p.Wdata = subset(p.Wdata, idents=my.subset)
 }
 
 # If no variable genes are provided
@@ -94,7 +94,7 @@ nonex = which(apply(p.Wdata@assays$RNA@counts, 1, function(x) length(which(x >0)
 
 if (my.vargenes == F) {
   # First get rid of non-expressed genes
-  p.Wdata = Seurat::SubsetData(p.Wdata, features = rownames(p.Wdata@assays$RNA)[-nonex])
+  p.Wdata = subset(p.Wdata, features = rownames(p.Wdata@assays$RNA)[-nonex])
   
   # Find the variable genes
   p.Wdata=Seurat::FindVariableFeatures(p.Wdata, dispersion.cutoff = c(0.25,Inf), mean.cutoff = c(0,Inf), selection.method = "mvp", assay = "RNA")
@@ -109,7 +109,11 @@ if (my.vargenes == F) {
 # }
  
 if (is.pseudocell) {
+  
   datExpr=Wdata@assays$RNA@counts[Expr,]
+  datExpr = datExpr[which(rowSums(as.matrix(datExpr))>0),]
+  Expr = rownames(datExpr)
+  
 } else{datExpr=Wdata@assays$RNA@data[Expr,]}
 
 # Check the length
@@ -126,7 +130,7 @@ Now we need to calculate the soft threshold power. First it calculates the simil
 We choose the smallest power for which the scale-free topology fit index reaches 0.90. 
 If none of the powers reaches 0.90, we take the one with the maximum, as long as we have a number above 0.75. If none of them reaches at least 0.75 we need to check our dataset.
 
-```{r soft-thresholding power, message=FALSE}
+```{r soft-thresholding power, echo=FALSE, message=FALSE}
 
 # Choose a set of soft-thresholding powers
 powers = c(c(1:10), seq(from = 12, to=30, by=2))
@@ -153,12 +157,20 @@ if ( !any( indexes > 0.75 ) ) {
   # quit(save = "no", 1, F)
 }
 
+if ( !any( indexes > 0.4 ) ) {
+  print("The scale-free topology index didn't reach 0.4 with any of the chosen powers, the script will not continue, since it might fail")
+  
+  knitr::knit_exit()
+
+}
+
 # Take the smalles power that gives us an index over 0.9, or the highest index if we don't reach 0.9
 if ( any( indexes > 0.9 ) ) {
     my.power = sft$fitIndices$Power[min(which(indexes > 0.9))]
 } else { my.power = sft$fitIndices$Power[which.max(indexes)] }
 
 print(paste0("Or power is ", my.power))
+
 
 ```
 

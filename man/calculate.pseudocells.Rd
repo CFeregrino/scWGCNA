@@ -33,7 +33,7 @@ calculate.pseudocells(
 A seurat object of aggregated pseudocells. With average expression. The slot misc contains the pseudocells dataframe, with each original cell and its assigned pseudocell, if no pseudocell is assigned then 00
 }
 \description{
-This function calculates pseudocells from a Seurat object, based on pre-calculated cell clusters and dimentionality reduction.
+This function calculates pseudocells from a Seurat object, based on pre-calculated cell clusters and dimentionality reduction. WARNING: This might be time consuming, depending on the size of the dataset.
 }
 \examples{
 ps.pbmc_small=calculate.pseudocells(Seurat::pbmc_small, dims = 1:10)

@@ -1,6 +1,6 @@
 #' Calculates pseudocells from a Seurat object
 #' 
-#' This function calculates pseudocells from a Seurat object, based on pre-calculated cell clusters and dimentionality reduction.
+#' This function calculates pseudocells from a Seurat object, based on pre-calculated cell clusters and dimentionality reduction. WARNING: This might be time consuming, depending on the size of the dataset.
 #' @param seurat The seurat object, with pre-computed PCA or other reductions, and the relevant clustering as IDs
 #' @param seeds The proportion of cells to be used as seeds. Alternatively, a string with the name of the seeds to use. Numeric between 0.1 and 0.9 or string. Default 0.2
 #' @param nn Number of nearest neighbors to compute and use for pseudocell aggregation. Default 10
@@ -15,6 +15,10 @@
 
 calculate.pseudocells <- function(seurat, seeds=0.2, nn = 10, reduction = "pca", dims = 1:20, features =NULL, cells= NULL) {
 
+  if(!class(seurat)=="Seurat"){
+    return(cat("Please provide a Seurat object"))
+  }
+  
   #if we're using a subset of the cells
   if (!is.null(cells)) {
     seurat = subset(seurat, idents=cells)

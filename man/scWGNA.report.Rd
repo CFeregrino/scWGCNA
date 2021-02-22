@@ -15,7 +15,7 @@ scWGNA.report(
   reduction = "tsne",
   dir = "./",
   is.pseudocell = T,
-  GO = T,
+  GO = F,
   ask = T
 )
 }
