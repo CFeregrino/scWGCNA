@@ -6,14 +6,14 @@
 #' @param gene.names Data frame. Two columns: 1= ids present in expression matrix, 2= names to appear in plots. Can be the same, but the two columns are necessary
 #' @param project.name String. The name of the project, will be used to name the saved objects and the report.
 #' @param sp String. The species used for the analysis in string form. Only two letters in the format Sp. Defaults to "Mm". Check that package "org.Sp.eg.db" exists
-#' @param cells Variable. Are certain clusters to be used? Please use group identities and not cell names
-#' @param features Variable. The features to be used for the analysis. Default is F, which makes the script calculate variable genes
+#' @param cells Variable. Are certain clusters to be used? Please use group identities and not cell names. Default = F
+#' @param features Variable. The features to be used for the analysis. Default is F, which makes the script calculate variable genes. Default = F
 #' @param reduction String. The reduction to use for plots. It must be present in the @@reductions slot of sc.data. Default is "tsne"
-#' @param dir String. The directory where the output will be saved. It defaults to the working directory
+#' @param dir String. The directory where the output will be saved. It defaults to the working directory. Default is "./"
 #' @param is.pseudocell Logical. Is the main data pseudocell data? Default is T
-#' @param GO Logical. Should GO term enrichment analyses be performed? Default is T
-#' @param min.cells Numeric. The minimum cells in which genes need to be expressed, to be considered for variable genes calculation
-#' @param ask Logical. Turns off the initial question to continue with the analyses.
+#' @param GO Logical. Should GO term enrichment analyses be performed? Default is F
+#' @param min.cells Numeric. The minimum cells in which genes need to be expressed, to be considered for variable genes calculation. Default is 10
+#' @param ask Logical. Turns off the initial question to continue with the analyses. Default is T
 #' @return No inline output. It saves an html report, as well as a list object with the resulting WGCNA data. They are both named using the project name and the date. It also creates a folder containing the network files per module.
 #' @export
 #' @importFrom WGCNA bicor

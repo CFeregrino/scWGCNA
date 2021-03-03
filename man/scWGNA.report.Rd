@@ -31,21 +31,21 @@ scWGNA.report(
 
 \item{sp}{String. The species used for the analysis in string form. Only two letters in the format Sp. Defaults to "Mm". Check that package "org.Sp.eg.db" exists}
 
-\item{cells}{Variable. Are certain clusters to be used? Please use group identities and not cell names}
+\item{cells}{Variable. Are certain clusters to be used? Please use group identities and not cell names. Default = F}
 
-\item{features}{Variable. The features to be used for the analysis. Default is F, which makes the script calculate variable genes}
+\item{features}{Variable. The features to be used for the analysis. Default is F, which makes the script calculate variable genes. Default = F}
 
 \item{reduction}{String. The reduction to use for plots. It must be present in the @reductions slot of sc.data. Default is "tsne"}
 
-\item{dir}{String. The directory where the output will be saved. It defaults to the working directory}
+\item{dir}{String. The directory where the output will be saved. It defaults to the working directory. Default is "./"}
 
 \item{is.pseudocell}{Logical. Is the main data pseudocell data? Default is T}
 
-\item{GO}{Logical. Should GO term enrichment analyses be performed? Default is T}
+\item{GO}{Logical. Should GO term enrichment analyses be performed? Default is F}
 
-\item{min.cells}{Numeric. The minimum cells in which genes need to be expressed, to be considered for variable genes calculation}
+\item{min.cells}{Numeric. The minimum cells in which genes need to be expressed, to be considered for variable genes calculation. Default is 10}
 
-\item{ask}{Logical. Turns off the initial question to continue with the analyses.}
+\item{ask}{Logical. Turns off the initial question to continue with the analyses. Default is T}
 }
 \value{
 No inline output. It saves an html report, as well as a list object with the resulting WGCNA data. They are both named using the project name and the date. It also creates a folder containing the network files per module.
