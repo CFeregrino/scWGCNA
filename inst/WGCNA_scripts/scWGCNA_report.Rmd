@@ -107,13 +107,13 @@ if (my.vargenes == F) {
 #   Expr = Expr[ which(Expr %in% rownames(p.Wdata@assays$RNA)[-nonex]) ]
 # }
  
-if (is.pseudocell) {
-  
-  datExpr=Wdata@assays$RNA@counts[Expr,]
-  datExpr = datExpr[which(rowSums(as.matrix(datExpr))>0),]
-  Expr = rownames(datExpr)
-  
-} else{datExpr=Wdata@assays$RNA@data[Expr,]}
+# if (is.pseudocell) {
+#   
+#   datExpr=Wdata@assays$RNA@counts[Expr,]
+#   datExpr = datExpr[which(rowSums(as.matrix(datExpr))>0),]
+#   Expr = rownames(datExpr)
+#   
+# } else{datExpr=Wdata@assays$RNA@data[Expr,]}
 
 # Check the length
 print(paste0("We have ", length(Expr), " genes in the variable genes object"))
