@@ -26,6 +26,8 @@ params:
   min.cell: 10
 ---
 
+# `r params$project.name`
+
 Date: `r format(Sys.Date(), "%d.%m.%y")`
 
 We use WGCNA to run an iterative analysis on a data set. 
@@ -534,6 +536,14 @@ To check the results module by module, we report some GO terms and individual pl
 
 ```{r GO analysis, fig.height=10, fig.width=6, message=FALSE}
 if (params$GO==T) {
+  
+  if (my.vargenes == F){
+    my.gouni = rownames(p.Wdata@assays$RNA@counts)[which(apply(p.Wdata@assays$RNA@counts, 1, function(x) length(which(x >0))) > my.min.cell-1)]
+  } else {
+      my.gouni = rownames(p.Wdata@assays$RNA@counts)[which(apply(p.Wdata@assays$RNA@counts, 1, function(x) length(which(x >0))) > 0)]
+    }
+  
+  
   #Get the ENSEMBL to ENTREZ list from the BioMart
 
   require(paste0("org.",my.sp,".eg.db"),character.only = T)
@@ -551,9 +561,11 @@ if (params$GO==T) {
      ex = sapply(dewg[[i]], function(x) AnnotationDbi::exists(x, my.ENS2EG)) #Which genes have an ENTREZ?
     dewg[[i]] = dewg[[i]][ex] #Only those genes
     dewg[[i]] = unlist(IDs[dewg[[i]]]) #The ENTREZ IDs
-    gowg[[i]] = limma::goana(dewg[[i]], species = my.sp, universe = unlist(IDs[rownames(Wdata)])) #The GO analysis
+    gowg[[i]] = limma::goana(dewg[[i]], species = my.sp, universe = unlist(IDs[my.gouni])) #The GO analysis
    }
-
+  
+  
+  
   goplots=list()
   goterms=list()
 
@@ -602,19 +614,21 @@ if (params$GO==T) {
 
 And here the report of each of the modules
 
-```{r results per module, results="asis", fig.height=9}
+```{r results per module, fig.height=9, fig.width=8, results="asis"}
 
 # Go trhough the modules
 for(i in 1:length(xx)){
 
   # A table is done, where we put the genes names that are making-up the module, in rows of 10. We fill the las row with empty spaces
-  ktable1 = data.frame( matrix( c(gnames[xy[[i]],2],rep(" ", 10-length(gnames[xy[[i]],2])%%10 )), ncol = 10, byrow = T ) )
+  ktable1 = data.frame( matrix( c(gnames[xy[[i]],2][order(geneModuleMembership[xy[[i]],i], decreasing = T)],
+                                  rep(" ", 10-length(gnames[xy[[i]],2])%%10 )), ncol = 10, byrow = T ) )
   colnames(ktable1) = rep(".", 10)
 
   if (params$GO == T) {
     # Another table, where we put the top 10 GO terms, in two columns
-    ktable2 = data.frame( matrix( as.character(goterms[[i]][1:10,1]), ncol = 2, byrow = F ) )
-    colnames(ktable2) = rep(".", 2)
+    ktable2 = data.frame( goterms[[i]][1:10,])
+    ktable2[,5] = as.character(signif(ktable2[,5],4))
+    colnames(ktable2) = c("Term", "Ont", "N", "n", "Adj. p-value")
     }
 
   # We make a plot in which we show the mean expression level of the co-expression module
@@ -635,7 +649,7 @@ for(i in 1:length(xx)){
                          mode = "fruchtermanreingold",
                          layout.par = list(repulse.rad=network::network.size(mynet)^1.1,
                                            area=network::network.size(mynet)^2.3), # Give space in the middle
-                         node.size = network::get.vertex.attribute(mynet,'membership'), max_size = 22, #The size of the nodes
+                         node.size = network::get.vertex.attribute(mynet,'membership'), max_size = 20, #The size of the nodes
                          node.color = levels(as.factor(dynamicColors))[i], # The color of the module
                          edge.size = "weight",
                          edge.color = "black",
