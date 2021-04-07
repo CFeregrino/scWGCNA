@@ -592,6 +592,13 @@ if (params$GO==T) {
 
   g.plot$cluster = as.factor(g.plot$cluster)
 
+  g.plot$Term = droplevels(g.plot$Term)
+  my.terms = nchar(levels(g.plot$Term))>45
+  my.gterms = strtrim(levels(g.plot$Term), 45)
+  my.gterms[my.terms] = paste0(my.gterms[my.terms],"...")
+  levels(g.plot$Term) = my.gterms
+  
+  
   my.terms = nchar(as.character(g.plot$Term))>45
   my.gterms = strtrim(g.plot$Term, 45)
   my.gterms[my.terms] = paste0(my.gterms[my.terms],"...")
@@ -600,7 +607,6 @@ if (params$GO==T) {
       ggplot2::geom_point(ggplot2::aes(shape = cluster), size = 3) +
       ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1)) +
       ggplot2::labs(x="GO Term", y="-log10 p. value") +
-      ggplot2::scale_x_discrete(labels=my.gterms) +
       ggplot2::scale_fill_manual(name = "Module",
                         labels = yy,
                         values = yy) +
