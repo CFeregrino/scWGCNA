@@ -28,6 +28,11 @@ scWGNA.report(data, sc.data, gene.names, project.name, sp="Mm")
 ```
 scWGNA.compare.report(data, test, test.names, project.name, ortho, ortho.sp)
 ```
+
+## Output examples
+These are the HTML outputs you can expect from the functions.
+The data used in our publication produced [this HTML report output](https://htmlpreview.github.io/?https://github.com/CFeregrino/scWGCNA/blob/main/HTMLexamples/WGCNA_report_E15test3_080421.html) from the scWGNA.report function, and [this HTML report output](https://htmlpreview.github.io/?https://github.com/CFeregrino/scWGCNA/blob/main/HTMLexamples/WGNA_comparative_E15.nb.html) from the scWGNA.compare.report function.
+
 ## References
 
 <a href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-9-559" target="_blank">Langfelder, P., Horvath, S. (2008) WGCNA: an R package for weighted correlation network analysis. BMC Bioinformatics 9, 559</a>
