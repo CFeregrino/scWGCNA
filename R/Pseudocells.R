@@ -33,11 +33,10 @@ calculate.pseudocells <- function(seurat, seeds=0.2, nn = 10, reduction = "pca",
   seurat = Seurat::FindNeighbors(seurat,
                          reduction = reduction,
                          dims = dims,
-                         compute.SNN = F,
                          k.param = nn)
   
   # Extract the nn matrix
-  nn.matrix <- as.matrix(seurat@graphs[[paste0(Seurat::DefaultAssay(seurat),"_nn")]])
+  nn.matrix = seurat@graphs[[paste0(Seurat::DefaultAssay(seurat),"_nn")]]
   
   # To keep count
   my.seeds = list()
@@ -65,7 +64,7 @@ calculate.pseudocells <- function(seurat, seeds=0.2, nn = 10, reduction = "pca",
       rm(seed.set)
       
       #How many cells would be aggragated using this particular set of seeds?
-      seeds.count = c(seeds.count, length(which(colSums(nn.matrix[my.seeds[[i]],]) > 0)) )
+      seeds.count = c(seeds.count, length(which(Matrix::colSums(nn.matrix[my.seeds[[i]],]) > 0)) )
       
     }
     
@@ -75,9 +74,9 @@ calculate.pseudocells <- function(seurat, seeds=0.2, nn = 10, reduction = "pca",
   }
   
   #Subset the nn matrix, to only keep the seeds
-  nn.matrix <- nn.matrix[seeds, ]
+  nn.matrix = nn.matrix[seeds, ]
   #Only keep the cells that would be aggregated
-  nn.matrix <- data.frame(nn.matrix[,colSums(nn.matrix) > 0 ])
+  nn.matrix = nn.matrix[,Matrix::colSums(nn.matrix) > 0 ]
   
   message(ncol(nn.matrix)," out of ", ncol(seurat)," Cells will be agreggated into ",nrow(nn.matrix)," Pseudocells")
   
@@ -97,7 +96,7 @@ calculate.pseudocells <- function(seurat, seeds=0.2, nn = 10, reduction = "pca",
   
   while (length(remaining.cells) > 0) {
     #we go seed by seed, starting by the poorest seeds
-    for (s in rownames(nn.matrix)[order(rowSums(nn.matrix[,remaining.cells, drop = F]))]) {
+    for (s in rownames(nn.matrix)[order(Matrix::rowSums(nn.matrix[,remaining.cells, drop = F]))]) {
       # If the seed still has options to choose from
       if ( sum(nn.matrix[s, remaining.cells]) > 0 & length(remaining.cells) > 0) {
         # take one of the seed nn
