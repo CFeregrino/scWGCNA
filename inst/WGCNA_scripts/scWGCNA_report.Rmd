@@ -112,8 +112,11 @@ if (my.vargenes == F) {
 if (is.pseudocell) {
 
   datExpr=Wdata@assays$RNA@counts[Expr,]
-  # datExpr = datExpr[which(rowSums(as.matrix(datExpr))>0),]
-  # Expr = rownames(datExpr)
+  datExpr = datExpr[which(Matrix::rowSums(datExpr)>0),]
+  if (length(which(Matrix::rowSums(datExpr)>0))>1) {
+    print(paste0("The following variable genes weew not found expressed in the pseudocell object:  ", names(which(Matrix::rowSums(datExpr)>0))))
+  }
+  Expr = rownames(datExpr)
 
 } else{datExpr=Wdata@assays$RNA@data[Expr,]}
 
