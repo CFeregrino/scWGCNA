@@ -16,12 +16,13 @@ library(scWGCNA)
 ```
 
 ## Applications
-* Calculate pseudocells from a Seurat object with pre.calculated PCA (or other reductions) and cell clusters
-**Warning**: This might be very time or memory consuming depending on the size of your dataset. (ca. 15 minutes for 10k cells). Consider to run this on a script for a dedicated job.
+* Calculate pseudocells from a Seurat object with pre.calculated PCA (or other reductions) and cell clusters  
+**Warning**: This might be very time or memory consuming depending on the size of your dataset. (ca. 15 minutes for 10k cells). Consider to run this on a script for a dedicated job.  
 ```
 my.pseudocells = calculate.pseudocells(seurat, seeds=0.2, nn = 10, reduction = "pca")
 ```
-* Perform WCGNA analyses and output an integrated HTML report
+* Perform WCGNA analyses and output an integrated HTML report  
+This function will save files in your computer, an HTML report, and an rds object with all the output from WGCNA  
 ```
 scWGNA.report(data, sc.data, gene.names, project.name, sp="Mm")
 ```
