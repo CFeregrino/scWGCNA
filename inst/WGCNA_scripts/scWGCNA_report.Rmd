@@ -108,13 +108,20 @@ if (my.vargenes == F) {
 #   Expr = Expr[which(Expr %in% my.ortho[,1])]
 #   Expr = Expr[ which(Expr %in% rownames(p.Wdata@assays$RNA)[-nonex]) ]
 # }
- 
+
+#### Let's check which genes are expressed in only one cell (less than 3 actually). To avoid one-celled modules. This also applies to genes that have in general very low expression, and one (three) outlier(s) with high expression
+
+my.oc=which(apply(p.Wdata@assays$RNA@counts[Expr], 1, function(x) length(which(x > (max(x)/3)))) < 3)
+
+if (length(my.oc >0)) {Expr=Expr[-my.oc]}
+
+# We had a problem, where some genes end up not expressed in the pseudocells. I fixed this in this way: 
 if (is.pseudocell) {
 
   datExpr=Wdata@assays$RNA@counts[Expr,]
   datExpr = datExpr[which(Matrix::rowSums(datExpr)>0),]
-  if (length(which(Matrix::rowSums(datExpr)>0))>1) {
-    print(paste0("The following variable genes weew not found expressed in the pseudocell object:  ", names(which(Matrix::rowSums(datExpr)>0))))
+  if (length(which(Matrix::rowSums(datExpr)==0))<1) {
+    print(paste0("The following variable genes weew not found expressed in the pseudocell object:  ", names(which(Matrix::rowSums(datExpr)==0))))
   }
   Expr = rownames(datExpr)
 
