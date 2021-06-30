@@ -1,6 +1,6 @@
 # scWGCNA
 scWGCNA is an adaptation of WGCNA to work with single-cell datasets.
-The functionality is presented in  <a href="https://doi.org/10.1101/2021.02.09.430383" target="_blank">Feregrino & Tschopp 2021</a>
+The functionality is presented in  <a href="http://doi.org/10.1002/dvdy.384" target="_blank">Feregrino & Tschopp 2021</a>
 
 Our package is still in beta testing and not fully functional, but the scripts in the "int" folder can be accessed and used to perform the WGCNA analyses.
 
