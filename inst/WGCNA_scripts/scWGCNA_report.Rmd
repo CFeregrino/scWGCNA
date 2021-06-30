@@ -113,7 +113,8 @@ if (my.vargenes == F) {
 
 my.oc=which(apply(p.Wdata@assays$RNA@counts[Expr], 1, function(x) length(which(x > (max(x)/3)))) < 3)
 
-if (length(my.oc >0)) {Expr=Expr[-my.oc]}
+if (length(my.oc >0)) {print(paste0("The following genes we're only highly expressed in less than 3 cells :  ", Expr[my.oc] ))
+  Expr=Expr[-my.oc]}
 
 # We had a problem, where some genes end up not expressed in the pseudocells. I fixed this in this way: 
 if (is.pseudocell) {
