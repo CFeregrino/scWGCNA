@@ -25,5 +25,5 @@ Imports:
     knitr,
     rmarkdown,
     dynamicTreeCut,
-    tinytex,
+    tinytex
     
