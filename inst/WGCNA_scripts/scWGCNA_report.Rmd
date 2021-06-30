@@ -117,7 +117,7 @@ if (length(my.oc >0)) {print(paste0("The following genes we're only highly expre
   Expr=Expr[-my.oc]}
 
 # We had a problem, where some genes end up not expressed in the pseudocells. I fixed this in this way: 
-if (is.pseudocell) {
+if (is.pseudocell==T) {
 
   datExpr=Wdata@assays$RNA@counts[Expr,]
   datExpr = datExpr[which(Matrix::rowSums(datExpr)>0),]
