@@ -17,7 +17,8 @@ scWGNA.report(
   is.pseudocell = T,
   GO = F,
   min.cells = 10,
-  ask = T
+  ask = T,
+  less = F
 )
 }
 \arguments{
@@ -46,6 +47,8 @@ scWGNA.report(
 \item{min.cells}{Numeric. The minimum cells in which genes need to be expressed, to be considered for variable genes calculation. Default is 10}
 
 \item{ask}{Logical. Turns off the initial question to continue with the analyses. Default is T}
+
+\item{less}{Logical. In case you are getting too many small modules, use this option as T}
 }
 \value{
 No inline output. It saves an html report, as well as a list object with the resulting WGCNA data. They are both named using the project name and the date. It also creates a folder containing the network files per module.
@@ -55,7 +58,7 @@ This function runs our semi-automatic single-cell WGCNA analysis. It runs in an 
 }
 \examples{
 # Calculate pseudocells
-ps.pbmc_small=calculate.pseudocells(Seurat::pbmc_small, dims = 1:10)
+ps.pbmc_small=calculate.pseudocells(SeuratObject::pbmc_small, dims = 1:10)
 
 gnames= data.frame(a=as.character(rownames(ps.pbmc_small))); gnames[,2]=gnames[,1]
 

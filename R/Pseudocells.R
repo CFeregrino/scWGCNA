@@ -11,7 +11,7 @@
 #' @return A seurat object of aggregated pseudocells. With average expression. The slot misc contains the pseudocells dataframe, with each original cell and its assigned pseudocell, if no pseudocell is assigned then 00
 #' @export
 #' @examples
-#' ps.pbmc_small=calculate.pseudocells(Seurat::pbmc_small, dims = 1:10)
+#' ps.pbmc_small=calculate.pseudocells(SeuratObject::pbmc_small, dims = 1:10)
 
 calculate.pseudocells <- function(seurat, seeds=0.2, nn = 10, reduction = "pca", dims = 1:20, features =NULL, cells= NULL) {
 

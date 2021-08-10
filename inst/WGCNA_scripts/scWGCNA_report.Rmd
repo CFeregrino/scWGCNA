@@ -23,6 +23,7 @@ params:
   sp: No_sp
   is.pseudocell: No_info
   GO: No_GO
+  my.less: No_less
   min.cell: 10
 ---
 
@@ -79,6 +80,8 @@ is.pseudocell = params$is.pseudocell
 
 my.min.cell = params$min.cell
 
+my.less = params$my.less
+
 ```
 
 Now we calculate the genes we will use.
@@ -111,13 +114,13 @@ if (my.vargenes == F) {
 
 #### Let's check which genes are expressed in only one cell (less than 3 actually). To avoid one-celled modules. This also applies to genes that have in general very low expression, and one (three) outlier(s) with high expression
 
-my.oc=which(apply(p.Wdata@assays$RNA@counts[Expr,], 1, function(x) length(which(x > (max(x)/3)))) < 3)
-
-if (length(my.oc) > 0) {
-  print(paste0("The following genes were only highly expressed in less than 3 cells :  ",
-               Expr[my.oc] ))
-  Expr=Expr[-my.oc]
-  }
+# my.oc=which(apply(p.Wdata@assays$RNA@counts[Expr,], 1, function(x) length(which(x > (max(x)/3)))) < 3)
+# 
+# if (length(my.oc) > 0) {
+#   print(paste0("The following genes were only highly expressed in less than 3 cells :  ",
+#                Expr[my.oc] ))
+#   Expr=Expr[-my.oc]
+#   }
 
 # We had a problem, where some genes end up not expressed in the pseudocells. I fixed this in this way: 
 if (is.pseudocell==T) {
@@ -229,7 +232,7 @@ SECOND:
 
 - Set the resulting number of modules as the ground number of modules
 
-```{r WGCNA}
+```{r WGCNA, warning=FALSE}
 # Running WGCNA iteratively
 
 my.Clnumber = 20
@@ -285,6 +288,7 @@ while(nonsig != 0) {
   
   # The height is then the one where we have the least number of genes in the first cluster
   my.height = w$j[which(w$unname.z.1..==min(w$unname.z.1..))]
+  
   
   # Since different heights can give us the minimum grey size, we chose the computed height, if present, or the highest one.
   if (cutheight %in% my.height) {
@@ -345,10 +349,17 @@ while(nonsig != 0) {
   }
   
   # If we still have more than 60% of the genes, we just use the min size of 15 regardles
+  
   if ( change < 3 ) {
     my.Clsize = 15
     my.height = cutheight
+    # if (my.less == T) {####
+    #   my.Clsize = w[which(w$j == my.height),]####
+    #   my.Clsize = my.Clsize$i[which.min(my.Clsize$dim.z.)]####
+    # } ####
   }
+  
+  print(paste("my.height: ",my.height," .... my.Clsize: ", my.Clsize))
   
   dynamicMods = dynamicTreeCut::cutreeDynamic(dendro = geneTree,  method="tree", minClusterSize = my.Clsize, deepSplit = T, cutHeight = my.height)
   
@@ -415,8 +426,20 @@ while(nonsig != 0) {
   if (length(which(!(colnames(datExpr)%in%x))) != 0) {
     dynamicColors=dynamicColors[-which(!(colnames(datExpr)%in%x))]
     datExpr=datExpr[,-(which(!(colnames(datExpr)%in%x)))]
-  } 
-
+  }
+  
+  if (change == 2 & my.less == T) {
+    
+    cat("\n\nIMPORTANT NOTE!!!\nYou have run this analysis witht the option less=TRUE. This means that the analysis will try to reduce the number of modules detected, based on their expression pattern. If modules have very similar expression profile (distance < 0.25), they will be merged. Moreover, if a module seems to be highly expressed in only 1-3 cells ( cells expressing >2*(max(expression)/3) ), it will be removed.\n")
+    
+    my.filtered = FilterMods_int(dynamicColors=dynamicColors, p.Wdata=p.Wdata, datExpr=datExpr,
+                                 geneTree=geneTree)
+    par(mfrow=c(1,1))
+    datExpr = my.filtered[[1]]
+    dynamicColors = my.filtered[[2]]
+    
+  }
+  
 }
 ```
 
