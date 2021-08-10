@@ -10,7 +10,7 @@
 #' @noRd
 #'
 
-FilterMods_int = function(dynamicColors, p.Wdata, datExpr, geneTree){
+FilterMods_int = function(dynamicColors, p.Wdata, datExpr, geneTree, my.power){
   # Take the colors, in case they don't change
   my.fcolors = dynamicColors
   # Take the single-cell expression, in order to check for similar expression
