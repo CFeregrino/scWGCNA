@@ -4,6 +4,7 @@
 #' @param p.Wdata the single-cell Seurat object
 #' @param datExpr the expression data used to calculate 
 #' @param geneTree the gene tree from the iteration we are filtering
+#' @param my.power the power used to construct the trees
 #'
 #' @return a list with a new datExpr and dynamic colors
 #' @noRd
