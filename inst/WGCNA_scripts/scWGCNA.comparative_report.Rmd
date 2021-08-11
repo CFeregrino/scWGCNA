@@ -19,6 +19,7 @@ params:
   ortho: No_ortho
   ortho.sp: No_ortho.sp
   groups: No_groups
+  dir: No_dir
 ---
 Date: `r format(Sys.Date(), "%d.%m.%y")`
 
@@ -519,7 +520,7 @@ Saving the preservation data under  `r paste0("./data/",project_name,"_modulepre
 
 ```{r saving}
 
-saveRDS(mp, paste0(project_name,"_modulepreservation_",format(Sys.Date(), "%d%m%y"),".rds"))
+saveRDS(mp, paste0(params$dir,project_name,"_modulepreservation_",format(Sys.Date(), "%d%m%y"),".rds"))
 
 options(backup.options)
 

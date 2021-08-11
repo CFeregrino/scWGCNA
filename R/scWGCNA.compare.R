@@ -35,7 +35,8 @@ scWGNA.compare.report = function(data,test,test.names,project.name,ortho,ortho.s
       project.name = project.name,
       ortho = ortho,
       ortho.sp = ortho.sp,
-      groups = groups
+      groups = groups,
+      dir=dir
     ),
     output_file = paste0(dir,"WGCNA_comparative_report_", project.name, "_", format(Sys.Date(), "%d%m%y"), ".html"),
     output_format = "html_document"
