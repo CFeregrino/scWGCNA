@@ -59,7 +59,7 @@ my.ortho.sp = params$ortho.sp
 my.test = params$test
 
 for (i in 1:length(my.test)) {
-  my.test[[i]] = Seurat::SubsetData(my.test[[i]], features = my.ortho[,my.ortho.sp[i]])
+  my.test[[i]] = my.test[[i]][my.ortho[,my.ortho.sp[i]],]
 }
 
 # Project name, will come out in files and folders
