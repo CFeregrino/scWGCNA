@@ -11,7 +11,8 @@ calculate.pseudocells(
   reduction = "pca",
   dims = 1:20,
   features = NULL,
-  cells = NULL
+  cells = NULL,
+  rseed = 42
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ calculate.pseudocells(
 \item{features}{The features to be used. Takes a string of feature names as present in the expression matrices. Defaults to NULL, which will use all the genes.}
 
 \item{cells}{The clusters or identities to be used. Takes a string of identities as present in the @active.ident slot. Defaults to NULL, which will use all the identities.}
+
+\item{rseed}{Numeric. The random  number generator of R, used to sample the seed cells. Makes the function replicable.}
 }
 \value{
 A seurat object of aggregated pseudocells. With average expression. The slot misc contains the pseudocells dataframe, with each original cell and its assigned pseudocell, if no pseudocell is assigned then 00

@@ -8,12 +8,13 @@
 #' @param dims The relevant dimensions that will be used to compute nearest neighbors. Default 1:20
 #' @param features The features to be used. Takes a string of feature names as present in the expression matrices. Defaults to NULL, which will use all the genes.
 #' @param cells The clusters or identities to be used. Takes a string of identities as present in the @@active.ident slot. Defaults to NULL, which will use all the identities.
+#' @param rseed Numeric. The random  number generator of R, used to sample the seed cells. Makes the function replicable.
 #' @return A seurat object of aggregated pseudocells. With average expression. The slot misc contains the pseudocells dataframe, with each original cell and its assigned pseudocell, if no pseudocell is assigned then 00
 #' @export
 #' @examples
 #' ps.pbmc_small=calculate.pseudocells(SeuratObject::pbmc_small, dims = 1:10)
 
-calculate.pseudocells <- function(seurat, seeds=0.2, nn = 10, reduction = "pca", dims = 1:20, features =NULL, cells= NULL) {
+calculate.pseudocells <- function(seurat, seeds=0.2, nn = 10, reduction = "pca", dims = 1:20, features =NULL, cells= NULL, rseed=42) {
 
   if(!class(seurat)=="Seurat"){
     return(cat("Please provide a Seurat object"))
@@ -47,8 +48,9 @@ calculate.pseudocells <- function(seurat, seeds=0.2, nn = 10, reduction = "pca",
     
     message("Choosing seeds")
     
+    set.seed(rseed)
+    
     for (i in 1:50) {
-      seed.set = c()
       
       #go trhough each cluster or ID
       for (cluster in levels(Seurat::Idents(seurat)) ) {
