@@ -128,7 +128,7 @@ if (is.pseudocell==T) {
   datExpr=Wdata@assays$RNA@counts[Expr,]
   datExpr = datExpr[which(Matrix::rowSums(datExpr)>0),]
   if (length(which(Matrix::rowSums(datExpr)==0))<1) {
-    print(paste0("The following variable genes weew not found expressed in the pseudocell object:  ", names(which(Matrix::rowSums(datExpr)==0))))
+    print(paste0("The following variable genes were not found expressed in the pseudocell object:  ", names(which(Matrix::rowSums(datExpr)==0))))
   }
   Expr = rownames(datExpr)
 
