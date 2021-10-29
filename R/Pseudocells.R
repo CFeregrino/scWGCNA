@@ -52,6 +52,8 @@ calculate.pseudocells <- function(seurat, seeds=0.2, nn = 10, reduction = "pca",
     
     for (i in 1:50) {
       
+      seed.set =c()
+      
       #go trhough each cluster or ID
       for (cluster in levels(Seurat::Idents(seurat)) ) {
         
