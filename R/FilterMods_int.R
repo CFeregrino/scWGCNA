@@ -28,10 +28,10 @@ FilterMods_int = function(dynamicColors, p.Wdata, datExpr, geneTree, my.power){
     cat("\nInfo: Some clusters will be merged\n")
     # Calculate a tree of modules
     MEtree = hclust(as.dist(MEDiss), method = "average")
-    # Plotit
-    plot(MEtree)
-    abline(h=0.25,col="red")
-    par(mfrow=c(1,1))
+    # # Plotit
+    # plot(MEtree)
+    # abline(h=0.25,col="red")
+    # par(mfrow=c(1,1))
     # Merge the modules, we only want the colors
     my.merge = WGCNA::mergeCloseModules(raw.datExpr, dynamicColors, cutHeight = 0.25, verbose = 3)$colors
     # Calculate the eigengenes again, using the new colors
@@ -63,13 +63,13 @@ FilterMods_int = function(dynamicColors, p.Wdata, datExpr, geneTree, my.power){
     TOM=WGCNA::TOMsimilarityFromExpr(datExpr,networkType = "signed", TOMType = "signed", power = my.power, corType = "bicor")
     geneTree = hclust(as.dist(1-TOM), method = "average")
     # Show the new modules, relative to the old ones
-    WGCNA::plotDendroAndColors(geneTree, cbind(dynamicColors,my.fcolors), c("Modules","Filtered"),
-                               dendroLabels = NULL,
-                               cex.dendroLabels = 0.6,
-                               addGuide = TRUE,
-                               main = "Gene dendrogram and module colors",
-                               guideAll = F)
-    par(mfrow=c(1,1))
+    # WGCNA::plotDendroAndColors(geneTree, cbind(dynamicColors,my.fcolors), c("Modules","Filtered"),
+    #                            dendroLabels = NULL,
+    #                            cex.dendroLabels = 0.6,
+    #                            addGuide = TRUE,
+    #                            main = "Gene dendrogram and module colors",
+    #                            guideAll = F)
+    # par(mfrow=c(1,1))
     # Check if we removed any module, cause then we need to filter
     if (any(is.na(my.fMods))) {
       # If so, remove the genes that we NAed, from the expression matrix

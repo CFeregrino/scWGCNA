@@ -1,10 +1,24 @@
 
+#' Plots the gene / module WGCNA tree, or trees
+#' 
+#' This function will help us plot the gene / module WGCNA tree. If history is TRUE, it will return all trees as iterated by scWCGNA
+#' @param scWGCNA.data scWGCNA.data. An scWGCNA.data object, as calculated by run.scWGCNA().
+#' @param history Logial. Should all the trees in the scWGCNA iteration be returned?. Default is FALSE, only plots the last tree.
+#' @return If history is FALSE (default) plots the gene / module WGCNA. If history is TRUE, returns a list of all plots generated during the iterations.
+#' @export
+#' @examples
+#' # Plot the WGCNA tree
+#' plot.WGCNA.dendro(pbmc_small.scWGCNA)
+#' 
+#' # Plot the first WGCNA tree of the iteration
+#' plot.WGCNA.dendro(pbmc_small.scWGCNA, 1)
+#' 
 
-plot.WGCNA.dendro = function(scWGCNA.data, history=F){
+plot.WGCNA.dendro = function(scWGCNA.data, tree){
   
   my.trees = scWGCNA.data$moduletrees.history
   
-  if (history = F) {
+  if (missing(tree)) {
     my.trees = my.trees[[length(my.trees)]]
     
     WGCNA::plotDendroAndColors(my.trees[[1]], my.trees[[2]], "Modules",
@@ -18,31 +32,40 @@ plot.WGCNA.dendro = function(scWGCNA.data, history=F){
     
   }
   
-  if (history = T) {
+  if (is.numeric(tree)) {
     
-    my.plots = lapply(my.trees, function(t){
-      
       # Plot the dendrogram and colors underneath
-      WGCNA::plotDendroAndColors(t[[1]], t[[2]], "Modules",
+      WGCNA::plotDendroAndColors(my.trees[[tree]][[1]], my.trees[[tree]][[2]], "Modules",
                                  dendroLabels = NULL,
                                  cex.dendroLabels = 0.6,
                                  addGuide = TRUE,
                                  main = "Gene dendrogram and module colors",
                                  guideAll = F)
+      
 
-    })
+
+    }
     
     
     
   }
   
-  
-  
-}
+#' Plots mean expression of the modules on the single cell data.
+#' 
+#' This function will help us plot the mean expression of the different modules calculated by scWGCNA
+#' @param s.cells Seurat object. The single cell data used to run scWGCNA.
+#' @param scWGCNA.data scWGCNA.data. An scWGCNA.data object, as calculated by run.scWGCNA().
+#' @param modules numeric or "all". Which modules should be plotted? Could be a single module, by number or color, a vector of several modules, or "all" to plot them all in a grid
+#' @param reduction string. The reduction to use for plots. It must be present in the @@reductions slot of sc.data. Default is "tsne"
+#' @param ncol numeric. If plotting more than 1 module, how many columns should the grid present?
+#' @return A ggplot, in case we're plotting only one module, or a grid of plots if plotting several
+#' @export
+#' @examples
+#' # Plot the expression of all modules
+#' plot.scWGCNA.multiexpression(SeuratObject::pbmc_small, pbmc_small.scWGCNA, modules = "all", ncol=3)
+#' 
 
-##################
-
-plot.scWGCNA.multiexpression = function(s.cells, scWGCNA.data, modules = "all", reduction="tsne", ncol){
+plot.scWGCNA.multiexpression = function(s.cells, scWGCNA.data, modules = "all", reduction="tsne", ncol=2){
   
   my.cols = levels(as.factor(scWGCNA.data[["dynamicCols"]]))
   toplot = data.frame(Seurat::Embeddings(s.cells[[reduction]]))
@@ -69,49 +92,98 @@ if (modules == "all" | length(modules) > 1){
                                                                  y=colnames(toplot)[2])) +
       ggplot2::geom_point(ggplot2::aes_string(color=avgexp[order(avgexp[,i]),i]), size=1) +
       ggplot2::scale_size(range = c(1, 1)) +
-      ggplot2::theme_void() +
-      ggplot2::theme(legend.position="none") +
+      ggplot2::theme_classic() +
+      ggplot2::theme(legend.position="none",
+                     axis.title = ggplot2::element_blank(),
+                     axis.text = ggplot2::element_blank(),
+                     axis.ticks = ggplot2::element_blank()) +
       ggplot2::scale_colour_gradientn(colours = c("gray90", "gray90", my.cols[i], my.cols[i])) +
-      ggplot2::labs(colour=my.cols[i])
+      ggplot2::labs(colour=my.cols[i]) +
+      ggplot2::ggtitle(paste0(i," ",my.cols[i]))
     
   }
   
-  gridExtra::grid.arrange(grobs=xx, ncol=4)
+  gridExtra::grid.arrange(grobs=my.plots, ncol=ncol)
   
 } else{
     
   if (is.character(modules)) {
     p.module = which(my.cols == modules)
-  }
+  } else{p.module = as.numeric(modules)}
   
   ggplot2::ggplot(toplot[order(avgexp[,p.module]),],
                   ggplot2::aes_string(x=colnames(toplot)[1], 
                                       y=colnames(toplot)[2])) +
     ggplot2::geom_point(ggplot2::aes_string(color=avgexp[order(avgexp[,p.module]),p.module]), size=1) +
     ggplot2::scale_size(range = c(1, 1)) +
-    ggplot2::theme_void() +
-    ggplot2::theme(legend.position="none") +
+    ggplot2::theme_classic() +
     ggplot2::scale_colour_gradientn(colours = c("gray90", "gray90", my.cols[p.module], my.cols[p.module])) +
-    ggplot2::labs(colour=my.cols[p.module])
+    ggplot2::labs(colour=my.cols[p.module]) +
+    ggplot2::ggtitle(paste0("Mean expression of module ",p.module," ",my.cols[p.module]))
   
   }
   
 }
 
-############################
+#' Plots a fruchtermanreingold network of the co-expression modules.
+#' 
+#' This function will help us plot a fruchtermanreingold network of each of the co-expression modules calculated by scWGCNA.
+#' @param scWGCNA.data scWGCNA.data. An scWGCNA.data object, as calculated by run.scWGCNA().
+#' @param module numeric . Which module should be plotted?
+#' @param gnames Data frame. If you're using gene IDs and no symbols, you might wanna provide a list of gene names for plotting. Two columns: 1= ids present in expression matrix, 2= names to appear in plots. Rownames= same as 1st row
+#' @param ... Parameters passed to GGally::ggnet2()
+#' @return A plot showing the relationships between the genes in a module. The layot represents a fruchtermanreingold network. The size of the nodes represent the relative membership of the gene, to the module. The size of the edges represent the relative topology overlap between two genes.
+#' @export
+#' @examples
+#' 
+#' # Calculate the networks in the scWCGNA object
+#' pbmc_small.scWGCNA = scWGCNA.networks(pbmc_small.scWGCNA)
+#' 
+#' # Plot the expression of all modules
+#' plot.scWGCNA.network(pbmc_small.scWGCNA, module=1)
+#' 
 
-plot.scWGCNA.network = function(scWGCNA.data, gnames){
+plot.scWGCNA.network = function(scWGCNA.data, module = 1, gnames, ...){
   
   if (is.null(scWGCNA.data[["networks"]])) {
     stop("Networks have not been generated, please run scWGCNA.networks() on your object first")
   }
   
+  my.cols = levels(as.factor(scWGCNA.data[["dynamicCols"]]))
   
+  if (is.character(module)) {
+    module = which(my.cols == module)
+    }
+  
+  lcols = my.cols[module]
+  if (apply(col2rgb(my.cols[module]), 2,
+            function(x) (x[1]*0.299 + x[2]*0.587 + x[3]*0.114)) < 75) {
+    lcols = "white"
+  } else {lcols = "black"}
+  
+  mynet = scWGCNA.data[["networks"]][[module]]
+  
+  if (missing(gnames)) {
+    gnames = network::network.vertex.names(mynet)
+  } else (gnames = gnames[network::network.vertex.names(mynet),2])
+  
+  GGally::ggnet2(mynet,
+                 mode = "fruchtermanreingold",
+                 layout.par = list(repulse.rad=network::network.size(mynet)^1.1,
+                                         area=network::network.size(mynet)^2.3), # Give space in the middle
+                 node.size = network::get.vertex.attribute(mynet,'membership01'), max_size = 20, #The size of the nodes
+                 node.color = my.cols[module], # The color of the module
+                 edge.size = "weight02",
+                 edge.color = "black",
+                 edge.alpha = network::get.edge.attribute(mynet,'weight01'),
+                 ...
+  ) +
+    ggplot2::theme(legend.position="none") +
+    ggplot2::geom_label(ggplot2::aes(label=gnames),
+                        fill = my.cols[module],
+                        alpha = 0.3,
+                        color=lcols,
+                        fontface = "bold")
   
 }
 
-
-
-
-
-  

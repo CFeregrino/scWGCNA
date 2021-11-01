@@ -7,7 +7,7 @@
 
 calc.vargenes = function(se.sc, min.cells){
   
-  nonex = which(apply(se.sc@assays$RNA@counts, 1, function(x) length(which(x >0))) < my.min.cell)
+  nonex = which(apply(se.sc@assays$RNA@counts, 1, function(x) length(which(x >0))) < min.cells)
   # First get rid of non-expressed genes
   se.sc = subset(se.sc, features = rownames(se.sc@assays$RNA)[-nonex])
   
