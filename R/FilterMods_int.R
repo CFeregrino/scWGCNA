@@ -1,20 +1,20 @@
 #' Filtering modules internally
 #'
 #' @param dynamicColors the dynamic colors
-#' @param p.Wdata the single-cell Seurat object
+#' @param s.Wdata the single-cell Seurat object
 #' @param datExpr the expression data used to calculate 
 #' @param geneTree the gene tree from the iteration we are filtering
 #' @param my.power the power used to construct the trees
-#'
+#' @importFrom stats aggregate as.dist cor hclust
 #' @return a list with a new datExpr and dynamic colors
 #' @noRd
 #'
 
-FilterMods_int = function(dynamicColors, p.Wdata, datExpr, geneTree, my.power){
+FilterMods_int = function(dynamicColors, s.Wdata, datExpr, geneTree, my.power){
   # Take the colors, in case they don't change
   my.fcolors = dynamicColors
   # Take the single-cell expression, in order to check for similar expression
-  raw.datExpr = p.Wdata@assays$RNA@data[colnames(datExpr),]
+  raw.datExpr = s.Wdata@assays$RNA@data[colnames(datExpr),]
   # Flip it like it's hot
   raw.datExpr = t(as.matrix(raw.datExpr))
   # Calculate eigengenes from the sc data, a distance matrix, and delete half of it.

@@ -3,6 +3,7 @@
 #' This function examines the data to find a suitable soft-thresholding power. It also helps to know if there is a scale-free topology.
 #' @param datexpr A matrix of gene expression. Thi SHOULD BE the expression data normally stores under @@assays$RNA@@data for single cell objects or ´@assays$RNA@counts´ for pseudocells. This has to contain ONLY the genes used for analysis.
 #' @return A number representing the soft-thresholding power with the highest scale-free topology fit index. And a message about it
+#' @importFrom graphics abline text
 #' @export
 #' @examples
 #' ps.pbmc_small=choose.sfttp(SeuratObject::pbmc_small@@assays$RNA@@data)

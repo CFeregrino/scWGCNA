@@ -12,12 +12,15 @@
 #' @return A list object with the resulting WGCNA data. 
 #' @export
 #' @importFrom WGCNA bicor
+#' @importFrom stats as.dist hclust
+#' @importFrom graphics par
 #' @examples
-#' # Calculate pseudocells
-#' ps.pbmc_small=calculate.pseudocells(SeuratObject::pbmc_small, dims = 1:10)
 #' 
-#' # Use pseudocells and single cells to calculate WGCNA
-#' scWGNA.pbmc_small = run.scWGCNA(p.cells = ps.pbmc_small, s.cells = SeuratObject::pbmc_small)
+#' A Seurat single cell object
+#' pbmc_small = SeuratObject::pbmc_small
+#' 
+#' # Use only single cells to calculate WGCNA, since the pbmc_small data set is too small
+#' pbmc_small.scWGCNA = run.scWGCNA(p.cells = pbmc_small, s.cells = pbmc_small, is.pseudocell = FALSE, features = rownames(pbmc_small))
 #' 
 
 run.scWGCNA = function(p.cells,
@@ -290,6 +293,8 @@ run.scWGCNA = function(p.cells,
       
   }
   
+  
+  
   s.MEList = MEList
   
   raw.datExpr = s.Wdata@assays$RNA@data[colnames(datExpr),]
@@ -317,6 +322,8 @@ run.scWGCNA = function(p.cells,
   WGCNA_data[["adjacency"]]= my.adjacency
   
   return(WGCNA_data)
+  
+  options(backup.options)
   
   }
 

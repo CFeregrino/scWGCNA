@@ -4,6 +4,7 @@
 #' This function calculates the graphic networks of each module in an scWGCNA list object. Returns an updated object.
 #' @param scWGCNA.data scWGCNA.data. An scWGCNA.data object, as calculated by run.scWGCNA().
 #' @return An scWGCNA.data object, updated with the slot "networks"
+#' @importFrom stats aggregate
 #' @export
 #' @examples
 #' # calculate networks

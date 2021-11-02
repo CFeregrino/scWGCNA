@@ -39,10 +39,11 @@ A list object with the resulting WGCNA data.
 This function runs our semi-automatic single-cell WGCNA analysis. It runs in an iterative way. Based on single-cell or pseudocell data.
 }
 \examples{
-# Calculate pseudocells
-ps.pbmc_small=calculate.pseudocells(SeuratObject::pbmc_small, dims = 1:10)
 
-# Use pseudocells and single cells to calculate WGCNA
-scWGNA.pbmc_small = run.scWGCNA(p.cells = ps.pbmc_small, s.cells = SeuratObject::pbmc_small)
+A Seurat single cell object
+pbmc_small = SeuratObject::pbmc_small
+
+# Use only single cells to calculate WGCNA, since the pbmc_small data set is too small
+pbmc_small.scWGCNA = run.scWGCNA(p.cells = pbmc_small, s.cells = pbmc_small, is.pseudocell = FALSE, features = rownames(pbmc_small))
 
 }

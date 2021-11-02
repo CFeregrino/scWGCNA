@@ -1,0 +1,130 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# scWGCNA
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+scWGCNA is an adaptation of WGCNA to work with single-cell datasets.
+The functionality is presented in  <a href="http://doi.org/10.1002/dvdy.384" target="_blank">Feregrino & Tschopp 2021</a>
+
+The new version of the package allows for a better workflow.
+
+scWGCNA works with Seurat objects.
+
+## Installation
+
+To install scWGCNA run in R:
+
+```{r}
+
+devtools::install_github("cferegrino/scWGCNA", ref="main")
+
+library(scWGCNA)
+
+```
+
+## Basic scWGCNA workflow
+
+
+* Our first step is to calculate pseudocells from a Seurat object with pre.calculated PCA (or other reductions) and cell clusters.
+For this example we are using the small pbmc dataset from Seurat.
+**Warning**: This might be very time or memory consuming depending on the size of your dataset. (ca. 15 minutes for 10k cells). Consider to run this on a script for a dedicated job.
+
+```{r}
+
+pbmc_small = SeuratObject::pbmc_small
+
+pbmc_small.pcells = calculate.pseudocells(s.cells = pbmc_small,
+                                          seeds=0.2,
+                                          nn = 10,
+                                          reduction = "pca",
+                                          dims = 1:10)
+
+```
+
+* Our next step is to perform WCGNA analyses
+From this, we will obtain a scWGNCA object, which is a list with information obtained from the analyses.
+For this, we suggest to use the pseudocells, calculated as shown above.
+For the sake of this example, using such a small dataset, using pseudocells is not feasible. For this reason, we use again the single cells. We also ask for the analysis to be started with all the genes in our example dataset, as this is very small.  Normally, the function would find variable genes for us.  
+
+```{r}
+
+pbmc_small.scWGCNA = run.scWGCNA(p.cells = pbmc_small, # Pseudocells (recommended), or single cells in seurat format
+                                 s.cells = pbmc_small, # single cells in seurat format
+                                 is.pseudocell = FALSE, # We are using single cells twice this time
+                                 features = rownames(pbmc_small)) # All genes this time. Recommended: variable genes
+
+```
+
+* We can now see which modules where detected by WGCNA after the iterations
+
+```{r}
+# Plot the gene / modules dendrogram
+scWGCNA.plotdendro(scWGCNA.data = pbmc_small.scWGCNA)
+
+#Look at the membership tables
+names(pbmc_small.scWGCNA$modules)
+
+#Let's look at the first module, "blue"
+head(pbmc_small.scWGCNA$modules$`1_blue`)
+
+```
+
+* We can also plot what's the mean expression of all, or each module, across the single cells
+
+```{r}
+# Plot the expression of all modules at once
+scWGCNA.plotexpression(s.cells = pbmc_small,
+                       scWGCNA.data = pbmc_small.scWGCNA, 
+                       modules = "all", 
+                       ncol=3)
+
+#Plot only the expression of the first module, "blue"
+scWGCNA.plotexpression(s.cells = pbmc_small,
+                       scWGCNA.data = pbmc_small.scWGCNA,
+                       modules = 1)
+
+```
+
+* We can also plot the different modules in a network visualization, to observe the relationships between the genes.  
+
+```{r}
+# First generate the networks in the scWCGNA object
+pbmc_small.scWGCNA = scWGCNA.networks(scWGCNA.data = pbmc_small.scWGCNA)
+
+# Plot the module "blue" as a network
+scWGCNA.plotnetwork(pbmc_small.scWGCNA, module=1)
+
+```
+
+* Perform comparative WCGNA analyses and output an integrated HTML report
+
+```
+scWGNA.compare.report(data, test, test.names, project.name, ortho, ortho.sp)
+```
+
+## Output examples
+These are the HTML outputs you can expect from the functions.
+The data used in our publication produced [this HTML report output](https://htmlpreview.github.io/?https://github.com/CFeregrino/scWGCNA/blob/main/HTMLexamples/WGCNA_report_E15test3_080421.html) from the scWGNA.report function, and [this HTML report output](https://htmlpreview.github.io/?https://github.com/CFeregrino/scWGCNA/blob/main/HTMLexamples/WGNA_comparative_E15.nb.html) from the scWGNA.compare.report function.
+
+## References
+
+<a href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-9-559" target="_blank">Langfelder, P., Horvath, S. (2008) WGCNA: an R package for weighted correlation network analysis. BMC Bioinformatics 9, 559</a>
+
+<a href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1001057" target="_blank">Langfelder P, Luo R, Oldham MC, Horvath S (2011) Is My Network Module Preserved and Reproducible?. PLOS Computational Biology 7(1): e1001057</a>
+
+<a href="https://doi.org/10.1101/2021.02.09.430383" target="_blank">Feregrino, C, Tschopp, P (2021) Assessing evolutionary and developmental transcriptome dynamics in homologous cell types. bioRxiv 2021.02.09.430383</a>

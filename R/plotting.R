@@ -1,36 +1,23 @@
 
 #' Plots the gene / module WGCNA tree, or trees
 #' 
-#' This function will help us plot the gene / module WGCNA tree. If history is TRUE, it will return all trees as iterated by scWCGNA
+#' This function will help us plot the gene / module WGCNA tree. 
 #' @param scWGCNA.data scWGCNA.data. An scWGCNA.data object, as calculated by run.scWGCNA().
-#' @param history Logial. Should all the trees in the scWGCNA iteration be returned?. Default is FALSE, only plots the last tree.
-#' @return If history is FALSE (default) plots the gene / module WGCNA. If history is TRUE, returns a list of all plots generated during the iterations.
+#' @param tree numeric. Which of all the trees in the iterations should be plotted?
+#' @return Plots the last / current gene / module WGCNA dendrogram. If a tree is specified, it returns that tree.
+#' @importFrom graphics par
 #' @export
 #' @examples
 #' # Plot the WGCNA tree
-#' plot.WGCNA.dendro(pbmc_small.scWGCNA)
+#' scWGCNA.plotdendro(pbmc_small.scWGCNA)
 #' 
 #' # Plot the first WGCNA tree of the iteration
-#' plot.WGCNA.dendro(pbmc_small.scWGCNA, 1)
+#' scWGCNA.plotdendro(pbmc_small.scWGCNA, 1)
 #' 
 
-plot.WGCNA.dendro = function(scWGCNA.data, tree){
+scWGCNA.plotdendro = function(scWGCNA.data, tree=length(scWGCNA.data$moduletrees.history)){
   
   my.trees = scWGCNA.data$moduletrees.history
-  
-  if (missing(tree)) {
-    my.trees = my.trees[[length(my.trees)]]
-    
-    WGCNA::plotDendroAndColors(my.trees[[1]], my.trees[[2]], "Modules",
-                               dendroLabels = NULL,
-                               cex.dendroLabels = 0.6,
-                               addGuide = TRUE,
-                               main = "Gene dendrogram and module colors",
-                               guideAll = F)
-    
-    par(mfrow=c(1,1))
-    
-  }
   
   if (is.numeric(tree)) {
     
@@ -62,10 +49,10 @@ plot.WGCNA.dendro = function(scWGCNA.data, tree){
 #' @export
 #' @examples
 #' # Plot the expression of all modules
-#' plot.scWGCNA.multiexpression(SeuratObject::pbmc_small, pbmc_small.scWGCNA, modules = "all", ncol=3)
+#' scWGCNA.plotexpression(SeuratObject::pbmc_small, pbmc_small.scWGCNA, modules = "all", ncol=3)
 #' 
 
-plot.scWGCNA.multiexpression = function(s.cells, scWGCNA.data, modules = "all", reduction="tsne", ncol=2){
+scWGCNA.plotexpression = function(s.cells, scWGCNA.data, modules = "all", reduction="tsne", ncol=2){
   
   my.cols = levels(as.factor(scWGCNA.data[["dynamicCols"]]))
   toplot = data.frame(Seurat::Embeddings(s.cells[[reduction]]))
@@ -133,17 +120,18 @@ if (modules == "all" | length(modules) > 1){
 #' @param gnames Data frame. If you're using gene IDs and no symbols, you might wanna provide a list of gene names for plotting. Two columns: 1= ids present in expression matrix, 2= names to appear in plots. Rownames= same as 1st row
 #' @param ... Parameters passed to GGally::ggnet2()
 #' @return A plot showing the relationships between the genes in a module. The layot represents a fruchtermanreingold network. The size of the nodes represent the relative membership of the gene, to the module. The size of the edges represent the relative topology overlap between two genes.
+#' @importFrom grDevices col2rgb
 #' @export
 #' @examples
 #' 
 #' # Calculate the networks in the scWCGNA object
 #' pbmc_small.scWGCNA = scWGCNA.networks(pbmc_small.scWGCNA)
 #' 
-#' # Plot the expression of all modules
-#' plot.scWGCNA.network(pbmc_small.scWGCNA, module=1)
+#' # Plot one of the modules as network
+#' scWGCNA.plotnetwork(pbmc_small.scWGCNA, module=1)
 #' 
 
-plot.scWGCNA.network = function(scWGCNA.data, module = 1, gnames, ...){
+scWGCNA.plotnetwork = function(scWGCNA.data, module = 1, gnames=NULL, ...){
   
   if (is.null(scWGCNA.data[["networks"]])) {
     stop("Networks have not been generated, please run scWGCNA.networks() on your object first")
@@ -163,7 +151,7 @@ plot.scWGCNA.network = function(scWGCNA.data, module = 1, gnames, ...){
   
   mynet = scWGCNA.data[["networks"]][[module]]
   
-  if (missing(gnames)) {
+  if (is.null(gnames)) {
     gnames = network::network.vertex.names(mynet)
   } else (gnames = gnames[network::network.vertex.names(mynet),2])
   
