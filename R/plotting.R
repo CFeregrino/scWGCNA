@@ -4,7 +4,7 @@ plot.WGCNA.dendro = function(scWGCNA.data, history=F){
   
   my.trees = scWGCNA.data$moduletrees.history
   
-  if (history = F) {
+  if (history == F) {
     my.trees = my.trees[[length(my.trees)]]
     
     WGCNA::plotDendroAndColors(my.trees[[1]], my.trees[[2]], "Modules",
@@ -18,7 +18,7 @@ plot.WGCNA.dendro = function(scWGCNA.data, history=F){
     
   }
   
-  if (history = T) {
+  if (history == T) {
     
     my.plots = lapply(my.trees, function(t){
       
