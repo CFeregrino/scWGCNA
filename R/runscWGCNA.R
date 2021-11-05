@@ -41,7 +41,7 @@ run.scWGCNA = function(p.cells,
   # If we need to subset the data
   if (!missing(idents)) {
     s.Wdata = subset(s.cells, idents=idents)
-  } else s.Wdata = s.cells
+  } else {s.Wdata = s.cells}
   
   # If we are using IDs or symbols
   if (missing(g.names)) {
@@ -57,12 +57,12 @@ run.scWGCNA = function(p.cells,
 
   if (is.pseudocell==T) {
     
-    datExpr=p.cells@assays$RNA@counts[Expr,]
-    datExpr = datExpr[which(Matrix::rowSums(datExpr)>0),]
-    if (length(which(Matrix::rowSums(datExpr)==0))<1) {
+    datExpr=p.cells@assays[[Seurat::DefaultAssay(p.cells)]]@counts[Expr,]
+    if (length(which(apply(datExpr, 1, var)>0))>0) {
       print(paste0("The following variable genes were not found expressed in the pseudocell object:  ",
                    names(which(Matrix::rowSums(datExpr)==0))))
     }
+    datExpr = datExpr[which(apply(datExpr, 1, var)>0),]
     Expr = rownames(datExpr)
     
   } else{datExpr=s.Wdata@assays$RNA@data[Expr,]}
