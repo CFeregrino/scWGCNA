@@ -19,138 +19,6 @@ scWGCNA works with Seurat objects.
 
 To install scWGCNA run in R:
 
-``` r
-devtools::install_github("cferegrino/scWGCNA", ref="main")
-#> Downloading GitHub repo cferegrino/scWGCNA@main
-#> rlang        (0.4.11     -> 0.4.12    ) [CRAN]
-#> digest       (0.6.27     -> 0.6.28    ) [CRAN]
-#> xfun         (0.22       -> 0.27      ) [CRAN]
-#> stringi      (1.5.3      -> 1.7.5     ) [CRAN]
-#> utf8         (1.2.1      -> 1.2.2     ) [CRAN]
-#> crayon       (1.4.1      -> 1.4.2     ) [CRAN]
-#> pillar       (1.6.1      -> 1.6.4     ) [CRAN]
-#> lifecycle    (1.0.0      -> 1.0.1     ) [CRAN]
-#> fansi        (0.4.2      -> 0.5.0     ) [CRAN]
-#> tibble       (3.1.1      -> 3.1.5     ) [CRAN]
-#> R6           (2.5.0      -> 2.5.1     ) [CRAN]
-#> generics     (0.1.0      -> 0.1.1     ) [CRAN]
-#> cpp11        (0.2.7      -> 0.4.0     ) [CRAN]
-#> dplyr        (1.0.6      -> 1.0.7     ) [CRAN]
-#> colorspace   (2.0-1      -> 2.0-2     ) [CRAN]
-#> htmlwidgets  (1.5.3      -> 1.5.4     ) [CRAN]
-#> knitr        (1.33       -> 1.36      ) [CRAN]
-#> isoband      (0.2.4      -> 0.2.5     ) [CRAN]
-#> data.table   (1.14.0     -> 1.14.2    ) [CRAN]
-#> sitmo        (2.0.1      -> 2.0.2     ) [CRAN]
-#> RcppAnnoy    (0.0.18     -> 0.0.19    ) [CRAN]
-#> deldir       (0.2-10     -> 1.0-6     ) [CRAN]
-#> spatstat.... (2.1-0      -> 2.2-0     ) [CRAN]
-#> goftest      (1.2-2      -> 1.2-3     ) [CRAN]
-#> spatstat.... (2.1-0      -> 2.3-0     ) [CRAN]
-#> cachem       (1.0.4      -> 1.0.6     ) [CRAN]
-#> bslib        (0.2.5.1    -> 0.3.1     ) [CRAN]
-#> later        (1.2.0      -> 1.3.0     ) [CRAN]
-#> mime         (0.10       -> 0.12      ) [CRAN]
-#> httpuv       (1.6.1      -> 1.6.3     ) [CRAN]
-#> parallelly   (1.25.0     -> 1.28.1    ) [CRAN]
-#> RcppArmad... (0.10.4.0.0 -> 0.10.7.0.0) [CRAN]
-#> matrixStats  (0.58.0     -> 0.61.0    ) [CRAN]
-#> future       (1.21.0     -> 1.23.0    ) [CRAN]
-#> future.apply (1.7.0      -> 1.8.1     ) [CRAN]
-#> gtools       (3.8.2      -> 3.9.2     ) [CRAN]
-#> openssl      (1.4.4      -> 1.4.5     ) [CRAN]
-#> curl         (4.3.1      -> 4.3.2     ) [CRAN]
-#> tidyr        (1.1.3      -> 1.1.4     ) [CRAN]
-#> shiny        (1.6.0      -> 1.7.1     ) [CRAN]
-#> igraph       (1.2.6      -> 1.2.7     ) [CRAN]
-#> reticulate   (1.20       -> 1.22      ) [CRAN]
-#> tinytex      (0.31       -> 0.34      ) [CRAN]
-#> spatstat.... (2.1-2      -> 2.3-1     ) [CRAN]
-#> plotly       (4.9.3      -> 4.10.0    ) [CRAN]
-#> pbapply      (1.4-3      -> 1.5-0     ) [CRAN]
-#> leiden       (0.3.7      -> 0.3.9     ) [CRAN]
-#> fitdistrplus (1.1-3      -> 1.1-6     ) [CRAN]
-#> rmarkdown    (2.8        -> 2.11      ) [CRAN]
-#> Seurat       (4.0.2      -> 4.0.5     ) [CRAN]
-#> Skipping 5 packages not available: AnnotationDbi, GO.db, preprocessCore, impute, limma
-#> Installing 50 packages: rlang, digest, xfun, stringi, utf8, crayon, pillar, lifecycle, fansi, tibble, R6, generics, cpp11, dplyr, colorspace, htmlwidgets, knitr, isoband, data.table, sitmo, RcppAnnoy, deldir, spatstat.utils, goftest, spatstat.geom, cachem, bslib, later, mime, httpuv, parallelly, RcppArmadillo, matrixStats, future, future.apply, gtools, openssl, curl, tidyr, shiny, igraph, reticulate, tinytex, spatstat.core, plotly, pbapply, leiden, fitdistrplus, rmarkdown, Seurat
-#> Installing packages into 'C:/Users/cferegr/AppData/Local/Temp/RtmpGmNMza/temp_libpath41844d1a4858'
-#> (as 'lib' is unspecified)
-#> 
-#>   There are binary versions available but the source versions are later:
-#>               binary source needs_compilation
-#> xfun            0.26   0.27              TRUE
-#> future        1.22.1 1.23.0             FALSE
-#> spatstat.core  2.3-0  2.3-1              TRUE
-#> Seurat         4.0.2  4.0.5              TRUE
-#> 
-#> package 'rlang' successfully unpacked and MD5 sums checked
-#> package 'digest' successfully unpacked and MD5 sums checked
-#> package 'stringi' successfully unpacked and MD5 sums checked
-#> package 'utf8' successfully unpacked and MD5 sums checked
-#> package 'crayon' successfully unpacked and MD5 sums checked
-#> package 'pillar' successfully unpacked and MD5 sums checked
-#> package 'lifecycle' successfully unpacked and MD5 sums checked
-#> package 'fansi' successfully unpacked and MD5 sums checked
-#> package 'tibble' successfully unpacked and MD5 sums checked
-#> package 'R6' successfully unpacked and MD5 sums checked
-#> package 'generics' successfully unpacked and MD5 sums checked
-#> package 'cpp11' successfully unpacked and MD5 sums checked
-#> package 'dplyr' successfully unpacked and MD5 sums checked
-#> package 'colorspace' successfully unpacked and MD5 sums checked
-#> package 'htmlwidgets' successfully unpacked and MD5 sums checked
-#> package 'knitr' successfully unpacked and MD5 sums checked
-#> package 'isoband' successfully unpacked and MD5 sums checked
-#> package 'data.table' successfully unpacked and MD5 sums checked
-#> package 'sitmo' successfully unpacked and MD5 sums checked
-#> package 'RcppAnnoy' successfully unpacked and MD5 sums checked
-#> package 'deldir' successfully unpacked and MD5 sums checked
-#> package 'spatstat.utils' successfully unpacked and MD5 sums checked
-#> package 'goftest' successfully unpacked and MD5 sums checked
-#> package 'spatstat.geom' successfully unpacked and MD5 sums checked
-#> package 'cachem' successfully unpacked and MD5 sums checked
-#> package 'bslib' successfully unpacked and MD5 sums checked
-#> package 'later' successfully unpacked and MD5 sums checked
-#> package 'mime' successfully unpacked and MD5 sums checked
-#> package 'httpuv' successfully unpacked and MD5 sums checked
-#> package 'parallelly' successfully unpacked and MD5 sums checked
-#> package 'RcppArmadillo' successfully unpacked and MD5 sums checked
-#> package 'matrixStats' successfully unpacked and MD5 sums checked
-#> package 'future.apply' successfully unpacked and MD5 sums checked
-#> package 'gtools' successfully unpacked and MD5 sums checked
-#> package 'openssl' successfully unpacked and MD5 sums checked
-#> package 'curl' successfully unpacked and MD5 sums checked
-#> package 'tidyr' successfully unpacked and MD5 sums checked
-#> package 'shiny' successfully unpacked and MD5 sums checked
-#> package 'igraph' successfully unpacked and MD5 sums checked
-#> package 'reticulate' successfully unpacked and MD5 sums checked
-#> package 'tinytex' successfully unpacked and MD5 sums checked
-#> package 'plotly' successfully unpacked and MD5 sums checked
-#> package 'pbapply' successfully unpacked and MD5 sums checked
-#> package 'leiden' successfully unpacked and MD5 sums checked
-#> package 'fitdistrplus' successfully unpacked and MD5 sums checked
-#> package 'rmarkdown' successfully unpacked and MD5 sums checked
-#> 
-#> The downloaded binary packages are in
-#>  C:\Users\cferegr\AppData\Local\Temp\RtmpwFDbpM\downloaded_packages
-#> installing the source packages 'xfun', 'future', 'spatstat.core', 'Seurat'
-#>          checking for file 'C:\Users\cferegr\AppData\Local\Temp\RtmpwFDbpM\remotes7bf44edd215a\CFeregrino-scWGCNA-d20ca6d/DESCRIPTION' ...     checking for file 'C:\Users\cferegr\AppData\Local\Temp\RtmpwFDbpM\remotes7bf44edd215a\CFeregrino-scWGCNA-d20ca6d/DESCRIPTION' ...   v  checking for file 'C:\Users\cferegr\AppData\Local\Temp\RtmpwFDbpM\remotes7bf44edd215a\CFeregrino-scWGCNA-d20ca6d/DESCRIPTION'
-#>       -  preparing 'scWGCNA': (1.5s)
-#>    checking DESCRIPTION meta-information ...     checking DESCRIPTION meta-information ...   v  checking DESCRIPTION meta-information
-#>       -  checking for LF line-endings in source and make files and shell scripts
-#>       -  checking for empty or unneeded directories
-#>       -  building 'scWGCNA_0.1.0.tar.gz'
-#>      
-#> 
-#> Installing package into 'C:/Users/cferegr/AppData/Local/Temp/RtmpGmNMza/temp_libpath41844d1a4858'
-#> (as 'lib' is unspecified)
-#> Warning in i.p(...): installation of package 'C:/Users/cferegr/AppData/Local/
-#> Temp/RtmpwFDbpM/file7bf4215155fa/scWGCNA_0.1.0.tar.gz' had non-zero exit status
-
-library(scWGCNA)
-#> 
-```
-
 ## Basic scWGCNA workflow
 
 -   Our first step is to calculate pseudocells from a Seurat object with
@@ -161,6 +29,9 @@ library(scWGCNA)
     Consider to run this on a script for a dedicated job.
 
 ``` r
+library(scWGCNA)
+#> 
+
 pbmc_small = SeuratObject::pbmc_small
 
 pbmc_small.pcells = calculate.pseudocells(s.cells = pbmc_small,
@@ -168,9 +39,6 @@ pbmc_small.pcells = calculate.pseudocells(s.cells = pbmc_small,
                                           nn = 10,
                                           reduction = "pca",
                                           dims = 1:10)
-#> Registered S3 method overwritten by 'spatstat.geom':
-#>   method     from
-#>   print.boxx cli
 #> Computing nearest neighbor graph
 #> Computing SNN
 #> Choosing seeds

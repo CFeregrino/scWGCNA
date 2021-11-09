@@ -29,11 +29,9 @@ scWGCNA works with Seurat objects.
 
 To install scWGCNA run in R:
 
-```{r}
+```{r eval = FALSE, echo = FALSE}
 
 devtools::install_github("cferegrino/scWGCNA", ref="main")
-
-library(scWGCNA)
 
 ```
 
@@ -45,6 +43,8 @@ For this example we are using the small pbmc dataset from Seurat.
 **Warning**: This might be very time or memory consuming depending on the size of your dataset. (ca. 15 minutes for 10k cells). Consider to run this on a script for a dedicated job.
 
 ```{r}
+
+library(scWGCNA)
 
 pbmc_small = SeuratObject::pbmc_small
 
