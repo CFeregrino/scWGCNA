@@ -16,6 +16,8 @@ An scWGCNA.data object, updated with the slot "networks"
 This function calculates the graphic networks of each module in an scWGCNA list object. Returns an updated object.
 }
 \examples{
+# A pre-calculated WGCNA data list
+MmLimbE155.scWGCNA
 # calculate networks
 MmLimbE155.scWGCNA = scWGCNA.networks(MmLimbE155.scWGCNA)
 

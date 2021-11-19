@@ -1,16 +1,32 @@
 #' Runs a comparative scWGCNA analysis
 #' 
 #' This function runs a WGCNA analysis adapted for single cells. Based on single-cell or pseudocell data.
-#' @param scWGCNA.data Seurat object. The WGCNA data to use as reference for comparative analysis. Output from scWGCNA.report.
-#' @param test.list List of seurat objects. The samples to test conservation in. If data is calculated on pseudocells, these should also be pseudocells
+#' @param scWGCNA.data The WGCNA data to use as reference for comparative analysis. Output from run.scWGCNA
+#' @param test.list List of Seurat objects. The samples to test conservation in. If data is calculated on pseudocells, these should also be pseudocell objects
 #' @param test.names Vector of strings. Contains the names for each of the samples in test.
-#' @param ortho Data frame. As many columns as species used only listing 1-to-1 orthologous genes. The species of the reference MUST always be column no. 1
+#' @param ortho Data frame. If the test objects and the reference data have different feature names, a data frame should be provided. Only listing 1-to-1 orthologous genes. The species of the reference MUST always be column no. 1
 #' @param ortho.sp Vector numeric. Indicating to which species in ortho each test sample belongs to.
-#' @param is.pseudocell Is it?
-#' @return No inline output. It saves an html report, as well as an object with the resulting WGCNA comparison indices. They are both named using the project name and the date.
+#' @param is.pseudocell Logic. Is the analysis based on pseudocells?
+#' @param ... Further parameters, passed to WGCNA::modulePreservation
+#' @return It returns a new object, main result of WGCNA::modulePreservation
 #' @export
 #' @importFrom WGCNA bicor
+#' @examples
+#' # A pre-calculated WGCNA data list
+#' MmLimbE155.scWGCNA
 #' 
+#' # A Seurat object with chicken limb cells
+#' my.small_GgLimbHH29
+#' 
+#' # We calculate pseudocells for this object
+#' GgLimbHH29.ps=calculate.pseudocells(my.small_GgLimbHH29, dims = 1:10)
+#' 
+#' # Our Seurat objects contain gene names equivalencies in the misc slot. We use them to biuld a table of orthologous genes
+#' my.ortho = merge(my.small_MmLimbE155@@misc$gnames,my.small_GgLimbHH29@@misc$gnames, by = "Gene.name")
+#' my.ortho=my.ortho[,2:3]
+#' 
+#' # Comparative tests
+#' my.comparative = scWGNA.compare(MmLimbE155.scWGCNA, test.list = list(GgLimbHH29.ps), test.names = c("Gg"), ortho = my.ortho, ortho.sp = c(2))
 
 scWGNA.compare = function(scWGCNA.data,
                           test.list,
@@ -55,11 +71,11 @@ scWGNA.compare = function(scWGCNA.data,
   if(is.pseudocell){
     
     test.list = lapply(test.list, function(s){
-      GetAssayData(s, slot = "counts", assay="RNA")
+      Seurat::GetAssayData(s, slot = "counts", assay="RNA")
     })
     
   } else {test.list = lapply(test.list, function(s){
-    GetAssayData(s)
+    Seurat::GetAssayData(s)
   })
   }
   
@@ -151,6 +167,8 @@ scWGNA.compare = function(scWGCNA.data,
                                    savePermutedStatistics = F,
                                    ...)
   })
+  
+  options(backup.options)
   
   return(mp)
   

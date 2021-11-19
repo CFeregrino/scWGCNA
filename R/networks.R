@@ -7,6 +7,8 @@
 #' @importFrom stats aggregate
 #' @export
 #' @examples
+#' # A pre-calculated WGCNA data list
+#' MmLimbE155.scWGCNA
 #' # calculate networks
 #' MmLimbE155.scWGCNA = scWGCNA.networks(MmLimbE155.scWGCNA)
 #' 
