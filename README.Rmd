@@ -25,6 +25,15 @@ The new version of the package allows for a better workflow.
 
 scWGCNA works with Seurat objects.
 
+## References
+
+<a href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-9-559" target="_blank">Langfelder, P., Horvath, S. (2008) WGCNA: an R package for weighted correlation network analysis. BMC Bioinformatics 9, 559</a>
+
+<a href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1001057" target="_blank">Langfelder P, Luo R, Oldham MC, Horvath S (2011) Is My Network Module Preserved and Reproducible?. PLOS Computational Biology 7(1): e1001057</a>
+
+<a href="https://doi.org/10.1101/2021.02.09.430383" target="_blank">Feregrino, C, Tschopp, P (2021) Assessing evolutionary and developmental transcriptome dynamics in homologous cell types. bioRxiv 2021.02.09.430383</a>
+
+
 ## Installation
 
 To install scWGCNA run in R:
@@ -37,6 +46,7 @@ devtools::install_github("cferegrino/scWGCNA", ref="main")
 
 ## Basic scWGCNA workflow
 
+### Pseudocell calculation
 
 * Our first step is to calculate pseudocells from a Seurat object with pre.calculated PCA (or other reductions) and cell clusters.
 For this example we are using the small pbmc dataset from Seurat.
@@ -46,41 +56,66 @@ For this example we are using the small pbmc dataset from Seurat.
 
 library(scWGCNA)
 
-pbmc_small = SeuratObject::pbmc_small
+# A seurat object we use as example
+my.small_MmLimbE155
 
-pbmc_small.pcells = calculate.pseudocells(s.cells = pbmc_small,
-                                          seeds=0.2,
-                                          nn = 10,
-                                          reduction = "pca",
-                                          dims = 1:10)
+# Calculate the pseudocells
+MmLimbE155.pcells = calculate.pseudocells(s.cells = my.small_MmLimbE155, # Single cells in Seurat object
+                                          seeds=0.2, # Fraction of cells to use as seeds to aggregate pseudocells
+                                          nn = 10, # Number of neighbors to aggregate
+                                          reduction = "pca", # Reduction to use
+                                          dims = 1:10) # The dimensions to use
 
 ```
+
+### single-cell WGCNA
 
 * Our next step is to perform WCGNA analyses
 From this, we will obtain a scWGNCA object, which is a list with information obtained from the analyses.
 For this, we suggest to use the pseudocells, calculated as shown above.
-For the sake of this example, using such a small dataset, using pseudocells is not feasible. For this reason, we use again the single cells. We also ask for the analysis to be started with all the genes in our example dataset, as this is very small.  Normally, the function would find variable genes for us.  
+For the sake of this example, we ask for the analysis to be started with all the genes in our example dataset, as this is very small.  Normally, the function would find variable genes for us.  
 
 ```{r}
 
-pbmc_small.scWGCNA = run.scWGCNA(p.cells = pbmc_small, # Pseudocells (recommended), or single cells in seurat format
-                                 s.cells = pbmc_small, # single cells in seurat format
-                                 is.pseudocell = FALSE, # We are using single cells twice this time
-                                 features = rownames(pbmc_small)) # All genes this time. Recommended: variable genes
+# Run scWGCNA
+MmLimbE155.scWGCNA = run.scWGCNA(p.cells = MmLimbE155.pcells, # Pseudocells (recommended), or Seurat single cells
+                                 s.cells = my.small_MmLimbE155, # single cells in Seurat format
+                                 is.pseudocell = T, # We are using single cells twice this time
+                                 features = rownames(my.small_MmLimbE155)) # Recommended: variable genes
 
 ```
 
+### Modules of co-expression
+
 * We can now see which modules where detected by WGCNA after the iterations
+* Very important, we can see what is the **average expression** of each module per cell, or pseudocell.
 
 ```{r}
 # Plot the gene / modules dendrogram
-scWGCNA.plotdendro(scWGCNA.data = pbmc_small.scWGCNA)
+scWGCNA.plotdendro(scWGCNA.data = MmLimbE155.scWGCNA)
 
 #Look at the membership tables
-names(pbmc_small.scWGCNA$modules)
+names(MmLimbE155.scWGCNA$modules)
 
 #Let's look at the first module, "blue"
-head(pbmc_small.scWGCNA$modules$`1_blue`)
+head(MmLimbE155.scWGCNA$modules$`1_blue`)
+
+# We use gene unique identifiers. For this reason we need to translate them to names
+my.module = MmLimbE155.scWGCNA$modules$`1_blue`
+
+# We have gene names translation in the misc slot of this seurat object.
+my.gnames = my.small_MmLimbE155@misc$gnames
+head(my.gnames)
+
+# Look at the table again
+my.module$gname = my.gnames[rownames(my.module), "Gene.name"]
+head(my.module)
+
+# Here we can see what is the expression of each co-expression module, per cell. This is in one of the list items
+head(MmLimbE155.scWGCNA[["sc.MEList"]]$averageExpr)
+
+# If we want to see the average module expression per pseudocell instead of single cells, we find it here
+head(MmLimbE155.scWGCNA[["MEList"]]$averageExpr)
 
 ```
 
@@ -88,14 +123,15 @@ head(pbmc_small.scWGCNA$modules$`1_blue`)
 
 ```{r}
 # Plot the expression of all modules at once
-scWGCNA.plotexpression(s.cells = pbmc_small,
-                       scWGCNA.data = pbmc_small.scWGCNA, 
-                       modules = "all", 
-                       ncol=3)
+scWGCNA.plotexpression(s.cells = my.small_MmLimbE155, # Single cells in Seurat format
+                       scWGCNA.data = MmLimbE155.scWGCNA, # scWGCNA list dataset
+                       modules = "all", # Which modules to plot?
+                       reduction = "tsne", # Which reduction to plot?
+                       ncol=3) # How many columns to use, in case we're plotting several?
 
 #Plot only the expression of the first module, "blue"
-scWGCNA.plotexpression(s.cells = pbmc_small,
-                       scWGCNA.data = pbmc_small.scWGCNA,
+scWGCNA.plotexpression(s.cells = my.small_MmLimbE155,
+                       scWGCNA.data = MmLimbE155.scWGCNA,
                        modules = 1)
 
 ```
@@ -104,10 +140,14 @@ scWGCNA.plotexpression(s.cells = pbmc_small,
 
 ```{r}
 # First generate the networks in the scWCGNA object
-pbmc_small.scWGCNA = scWGCNA.networks(scWGCNA.data = pbmc_small.scWGCNA)
+MmLimbE155.scWGCNA = scWGCNA.networks(scWGCNA.data = MmLimbE155.scWGCNA)
 
 # Plot the module "blue" as a network
-scWGCNA.plotnetwork(pbmc_small.scWGCNA, module=1)
+scWGCNA.plotnetwork(MmLimbE155.scWGCNA, module=1)
+
+# Plot the module "blue" as a network. Again, we are using gene unique identifiers, not very informative.
+# For this, we use the gene names translation we had before.
+scWGCNA.plotnetwork(MmLimbE155.scWGCNA, module=1, gnames = my.gnames)
 
 ```
 
@@ -121,10 +161,3 @@ scWGNA.compare.report(data, test, test.names, project.name, ortho, ortho.sp)
 These are the HTML outputs you can expect from the functions.
 The data used in our publication produced [this HTML report output](https://htmlpreview.github.io/?https://github.com/CFeregrino/scWGCNA/blob/main/HTMLexamples/WGCNA_report_E15test3_080421.html) from the scWGNA.report function, and [this HTML report output](https://htmlpreview.github.io/?https://github.com/CFeregrino/scWGCNA/blob/main/HTMLexamples/WGNA_comparative_E15.nb.html) from the scWGNA.compare.report function.
 
-## References
-
-<a href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-9-559" target="_blank">Langfelder, P., Horvath, S. (2008) WGCNA: an R package for weighted correlation network analysis. BMC Bioinformatics 9, 559</a>
-
-<a href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1001057" target="_blank">Langfelder P, Luo R, Oldham MC, Horvath S (2011) Is My Network Module Preserved and Reproducible?. PLOS Computational Biology 7(1): e1001057</a>
-
-<a href="https://doi.org/10.1101/2021.02.09.430383" target="_blank">Feregrino, C, Tschopp, P (2021) Assessing evolutionary and developmental transcriptome dynamics in homologous cell types. bioRxiv 2021.02.09.430383</a>

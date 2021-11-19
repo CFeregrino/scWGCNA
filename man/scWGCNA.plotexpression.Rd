@@ -31,6 +31,6 @@ This function will help us plot the mean expression of the different modules cal
 }
 \examples{
 # Plot the expression of all modules
-scWGCNA.plotexpression(SeuratObject::pbmc_small, pbmc_small.scWGCNA, modules = "all", ncol=3)
+scWGCNA.plotexpression(s.cells = my.small_MmLimbE155, scWGCNA.data = MmLimbE155.scWGCNA, modules = "all", ncol=3, reduction="tsne")
 
 }

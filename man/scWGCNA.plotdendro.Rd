@@ -22,9 +22,9 @@ This function will help us plot the gene / module WGCNA tree.
 }
 \examples{
 # Plot the WGCNA tree
-scWGCNA.plotdendro(pbmc_small.scWGCNA)
+scWGCNA.plotdendro(scWGCNA.data = MmLimbE155.scWGCNA)
 
 # Plot the first WGCNA tree of the iteration
-scWGCNA.plotdendro(pbmc_small.scWGCNA, 1)
+scWGCNA.plotdendro(MmLimbE155.scWGCNA, 1)
 
 }

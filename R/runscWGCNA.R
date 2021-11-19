@@ -12,15 +12,18 @@
 #' @return A list object with the resulting WGCNA data. 
 #' @export
 #' @importFrom WGCNA bicor
-#' @importFrom stats as.dist hclust
+#' @importFrom stats as.dist hclust var
 #' @importFrom graphics par
 #' @examples
 #' 
-#' A Seurat single cell object
-#' pbmc_small = SeuratObject::pbmc_small
+#' # We calculate first pseudocells
+#' MmLimbE155.ps=calculate.pseudocells(my.small_MmLimbE155, dims = 1:10)
 #' 
-#' # Use only single cells to calculate WGCNA, since the pbmc_small data set is too small
-#' pbmc_small.scWGCNA = run.scWGCNA(p.cells = pbmc_small, s.cells = pbmc_small, is.pseudocell = FALSE, features = rownames(pbmc_small))
+#' # We use all the features in this small example dataset. These are pre-computed highly variable genes.
+#' my.f = rownames(my.small_MmLimbE155)
+#' 
+#' # Use the pseudocells and single cells to calculate modules
+#' MmLimbE155.scWGCNA = run.scWGCNA(p.cells = MmLimbE155.ps, s.cells = my.small_MmLimbE155, features = my.f)
 #' 
 
 run.scWGCNA = function(p.cells,

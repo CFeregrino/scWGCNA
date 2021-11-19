@@ -17,6 +17,6 @@ This function calculates the graphic networks of each module in an scWGCNA list 
 }
 \examples{
 # calculate networks
-pbmc_small.scWGCNA = scWGCNA.networks(pbmc_small.scWGCNA)
+MmLimbE155.scWGCNA = scWGCNA.networks(MmLimbE155.scWGCNA)
 
 }

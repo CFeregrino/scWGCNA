@@ -8,7 +8,7 @@
 #' @export
 #' @examples
 #' # calculate networks
-#' pbmc_small.scWGCNA = scWGCNA.networks(pbmc_small.scWGCNA)
+#' MmLimbE155.scWGCNA = scWGCNA.networks(MmLimbE155.scWGCNA)
 #' 
 
 scWGCNA.networks = function(scWGCNA.data){

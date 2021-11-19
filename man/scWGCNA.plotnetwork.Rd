@@ -24,9 +24,11 @@ This function will help us plot a fruchtermanreingold network of each of the co-
 \examples{
 
 # Calculate the networks in the scWCGNA object
-pbmc_small.scWGCNA = scWGCNA.networks(pbmc_small.scWGCNA)
+MmLimbE155.scWGCNA = scWGCNA.networks(MmLimbE155.scWGCNA)
 
 # Plot one of the modules as network
-scWGCNA.plotnetwork(pbmc_small.scWGCNA, module=1)
+scWGCNA.plotnetwork(MmLimbE155.scWGCNA, module=1)
 
+# If you're using IDs instead of names, and have a separate gene names data.frame
+scWGCNA.plotnetwork(MmLimbE155.scWGCNA, module=1, gnames = my.small_MmLimbE155@misc$gnames)
 }

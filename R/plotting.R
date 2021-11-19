@@ -9,10 +9,10 @@
 #' @export
 #' @examples
 #' # Plot the WGCNA tree
-#' scWGCNA.plotdendro(pbmc_small.scWGCNA)
+#' scWGCNA.plotdendro(scWGCNA.data = MmLimbE155.scWGCNA)
 #' 
 #' # Plot the first WGCNA tree of the iteration
-#' scWGCNA.plotdendro(pbmc_small.scWGCNA, 1)
+#' scWGCNA.plotdendro(MmLimbE155.scWGCNA, 1)
 #' 
 
 scWGCNA.plotdendro = function(scWGCNA.data, tree=length(scWGCNA.data$moduletrees.history)){
@@ -49,7 +49,7 @@ scWGCNA.plotdendro = function(scWGCNA.data, tree=length(scWGCNA.data$moduletrees
 #' @export
 #' @examples
 #' # Plot the expression of all modules
-#' scWGCNA.plotexpression(SeuratObject::pbmc_small, pbmc_small.scWGCNA, modules = "all", ncol=3)
+#' scWGCNA.plotexpression(s.cells = my.small_MmLimbE155, scWGCNA.data = MmLimbE155.scWGCNA, modules = "all", ncol=3, reduction="tsne")
 #' 
 
 scWGCNA.plotexpression = function(s.cells, scWGCNA.data, modules = "all", reduction="tsne", ncol=2){
@@ -125,11 +125,13 @@ if (modules == "all" | length(modules) > 1){
 #' @examples
 #' 
 #' # Calculate the networks in the scWCGNA object
-#' pbmc_small.scWGCNA = scWGCNA.networks(pbmc_small.scWGCNA)
+#' MmLimbE155.scWGCNA = scWGCNA.networks(MmLimbE155.scWGCNA)
 #' 
 #' # Plot one of the modules as network
-#' scWGCNA.plotnetwork(pbmc_small.scWGCNA, module=1)
+#' scWGCNA.plotnetwork(MmLimbE155.scWGCNA, module=1)
 #' 
+#' # If you're using IDs instead of names, and have a separate gene names data.frame
+#' scWGCNA.plotnetwork(MmLimbE155.scWGCNA, module=1, gnames = my.small_MmLimbE155@@misc$gnames)
 
 scWGCNA.plotnetwork = function(scWGCNA.data, module = 1, gnames=NULL, ...){
   
@@ -154,6 +156,8 @@ scWGCNA.plotnetwork = function(scWGCNA.data, module = 1, gnames=NULL, ...){
   if (is.null(gnames)) {
     gnames = network::network.vertex.names(mynet)
   } else (gnames = gnames[network::network.vertex.names(mynet),2])
+  
+  set.seed(42)
   
   GGally::ggnet2(mynet,
                  mode = "fruchtermanreingold",
