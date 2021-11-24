@@ -37,7 +37,7 @@ This function runs a WGCNA analysis adapted for single cells. Based on single-ce
 }
 \examples{
 # A pre-calculated WGCNA data list
-MmLimbE155.scWGCNA
+class(MmLimbE155.scWGCNA)
 
 # A Seurat object with chicken limb cells
 my.small_GgLimbHH29
@@ -50,5 +50,5 @@ my.ortho = merge(my.small_MmLimbE155@misc$gnames,my.small_GgLimbHH29@misc$gnames
 my.ortho=my.ortho[,2:3]
 
 # Comparative tests
-my.comparative = scWGNA.compare(MmLimbE155.scWGCNA, test.list = list(GgLimbHH29.ps), test.names = c("Gg"), ortho = my.ortho, ortho.sp = c(2))
+MmvGg.comparative = scWGNA.compare(MmLimbE155.scWGCNA, test.list = list(GgLimbHH29.ps), test.names = c("Gg"), ortho = my.ortho, ortho.sp = c(2))
 }

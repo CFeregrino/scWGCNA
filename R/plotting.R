@@ -179,3 +179,126 @@ scWGCNA.plotnetwork = function(scWGCNA.data, module = 1, gnames=NULL, ...){
   
 }
 
+#' Plots a barplot with the fraction of the expressed and orthologous genes for each module of a scWGCNA comparison.
+#' 
+#' This function will plot a barplot showing what's the fraction of genes in each module that is (if its the case) present in the provided 1-2-1 orthologues table, and the genes that are expressed in all test samples, and therefore used for the comparison.
+#' @param scWGCNA.comp.data scWGCNA comparative data as calculated by scWGNA.compare().
+#' @param module numeric . Which module should be plotted?
+#' @return A ggplot barplot
+#' @export
+#' @examples
+#' 
+#' # S pre-calculated list scWGCNA comparative data, calculated with scWGCNA.compare
+#' class(MmvGg.comparative)
+#' 
+#' # Plot the fraction of genes used for the comparison.
+#' scW.p.modulefrac(MmvGg.comparative)
+
+scW.p.modulefrac = function(scWGCNA.comp.data){
+  
+  to.plot = scWGCNA.comp.data$misc$modulefrac
+  
+  to.plot[,-1] = to.plot[,-1] / to.plot[,2]
+  
+  if (ncol(to.plot) == 4) {
+    to.plot$diff = to.plot$ortho - to.plot$expr
+    to.plot = to.plot[,-3]
+  }
+  
+  to.plot = reshape2::melt(to.plot[,c(1,3:ncol(to.plot))])
+  
+  ggplot2::ggplot(to.plot, 
+                  ggplot2::aes(x=module, 
+                               y=value, 
+                               fill = variable,
+                               color=module)) +
+    ggplot2::geom_bar(position=ggplot2::position_stack(reverse = TRUE), 
+                      stat = "identity",
+                      size=2) + 
+    ggplot2::scale_color_manual(values = as.character(toplot$module)) + 
+    ggplot2::scale_fill_manual(values=c("gray","gray93"),
+                               labels = c("expressed in\nall samples","orthologous\nnon-expressed")) + 
+    ggplot2::theme_light() + 
+    ggplot2::guides(color="none") +
+    ggplot2::labs(y="fraction", 
+                  fill="Genes in module") + 
+    ggplot2::theme(legend.text = ggplot2::element_text(margin = ggplot2::margin(t = 10, b=10)))
+  
+}
+
+
+
+#' Plots a barplot with the fraction of the expressed and orthologous genes for each module of a scWGCNA comparison.
+#' 
+#' This function will plot a barplot showing what's the fraction of genes in each module that is (if its the case) present in the provided 1-2-1 orthologues table, and the genes that are expressed in all test samples, and therefore used for the comparison.
+#' @param scWGCNA.comp.data scWGCNA comparative data as calculated by scWGNA.compare().
+#' @param module numeric . Which module should be plotted?
+#' @return A ggplot barplot
+#' @export
+#' @examples
+#' 
+#' # S pre-calculated list scWGCNA comparative data, calculated with scWGCNA.compare
+#' class(MmvGg.comparative)
+#' 
+#' # Plot the fraction of genes used for the comparison.
+#' scW.p.modulefrac(MmvGg.comparative)
+
+scW.p.modulefrac = function(scWGCNA.comp.data, to.plot=c("preservation", "median.rank")){
+  
+  # leave grey and gold modules out
+  modColors = rownames(scWGCNA.comp.data$preservation$observed[[1]][[2]])
+  plotMods = !(modColors %in% c("grey", "gold"))
+  
+  # The variable where we keep the data to plot
+  plotData = data.frame(Rank = numeric(), Zsum= numeric(), Size = numeric(), Cols = character(), Sample = character())
+  
+  # Fill in with data from the samples
+  for (test in 1:(length(scWGCNA.comp.data$quality$observed[[1]])-1)) {
+    plotData = rbind(plotData,data.frame(Rank = scWGCNA.comp.data$preservation$observed[[1]][[test+1]][, 2],
+                                         Zsum= scWGCNA.comp.data$preservation$Z[[1]][[test+1]][, 2],
+                                         Size = scWGCNA.comp.data$preservation$observed[[1]][[test+1]][, 1],
+                                         Cols = rownames(scWGCNA.comp.data$preservation$observed[[1]][[test+1]]),
+                                         Sample = rep(scWGCNA.comp.data$misc$testnames[test],nrow(mp$preservation$observed[[1]][[test+1]]))))
+  }
+  
+  # We kick out the golden and grey modules
+  plotData = plotData[rep(plotMods, length(scWGCNA.comp.data$quality$observed[[1]])-1),]
+  
+  
+  my.alpha = rep(1,dim(plotData)[1])
+  my.alpha[which(plotData$Zsum < 2)] = 0.75
+  plotData$alpha = my.alpha
+  
+  # The plotting of the Zsummary and Median Rank, against the module size
+  my.p=list()
+  
+  my.plotData = plotData
+  my.plotData$Sample = factor(my.plotData$Sample, levels = scWGCNA.comp.data$misc$testnames)
+  my.plotData$mylabels = my.plotData$Cols
+  my.plotData$mylabels[which(plotData$Zsum < 2)] = NA
+
+  plotData = my.plotData #?????????
+  
+  my.gp = ggplot2::geom_point(ggplot2::aes(fill=Cols, shape=Sample), size=3.5)
+  my.scfm = ggplot2::scale_fill_manual(values= as.character(unique(plotData$Cols)))
+  my.ssm = ggplot2::scale_shape_manual(name= "Sample:",values= c(21:25), labels=Wtest_names[my.grouping[[i]]])
+  my.gpa = ggplot2::geom_point(ggplot2::aes(fill=Cols, shape=Sample, alpha=alpha), size=3.5)
+  
+  if (any(to.plot %in% "preservation")) {
+    
+    my.p = c(my.p,
+             ggplot2::ggplot(plotData, ggplot2::aes(x=Size, y=Zsum, label=Cols)) + 
+               ggplot2::geom_hline(yintercept = c(2,10), linetype="dashed", color=c("red", "limegreen")) +
+               my.gp +
+               ggplot2::geom_text(nudge_x = 0.08, hjust=0, size=2.5, check_overlap = T) +
+               my.scfm + 
+               my.ssm +
+               ggplot2::theme_classic() +
+               ggplot2::theme(legend.position="none") +
+               ggplot2::scale_x_continuous(trans='log2', expand = c(0.1, 0)) +
+               ggplot2::labs(x ="Module size", y = "Zsummary")
+    )
+    
+  }
+  
+}

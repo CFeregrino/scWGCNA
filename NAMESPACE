@@ -3,6 +3,7 @@
 export(calculate.pseudocells)
 export(choose.sfttp)
 export(run.scWGCNA)
+export(scW.p.modulefrac)
 export(scWGCNA.networks)
 export(scWGCNA.plotdendro)
 export(scWGCNA.plotexpression)

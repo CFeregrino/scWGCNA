@@ -13,7 +13,7 @@
 #' @importFrom WGCNA bicor
 #' @examples
 #' # A pre-calculated WGCNA data list
-#' MmLimbE155.scWGCNA
+#' class(MmLimbE155.scWGCNA)
 #' 
 #' # A Seurat object with chicken limb cells
 #' my.small_GgLimbHH29
@@ -26,7 +26,7 @@
 #' my.ortho=my.ortho[,2:3]
 #' 
 #' # Comparative tests
-#' my.comparative = scWGNA.compare(MmLimbE155.scWGCNA, test.list = list(GgLimbHH29.ps), test.names = c("Gg"), ortho = my.ortho, ortho.sp = c(2))
+#' MmvGg.comparative = scWGNA.compare(MmLimbE155.scWGCNA, test.list = list(GgLimbHH29.ps), test.names = c("Gg"), ortho = my.ortho, ortho.sp = c(2))
 
 scWGNA.compare = function(scWGCNA.data,
                           test.list,
@@ -38,6 +38,9 @@ scWGNA.compare = function(scWGCNA.data,
   
   backup.options = options()
   options(stringsAsFactors = FALSE)
+  
+  # A list, to keep the genes that would be discarded in the process.
+  my.genes = list()
   
   # a list to keep our expression matrices
   datExpr = list()
@@ -61,13 +64,6 @@ scWGNA.compare = function(scWGCNA.data,
       }
   }
   
-  if(is.null(ortho)){
-    
-    ortho = data.frame(x=Expr, y=Expr)
-    ortho.sp = c(1,rep(2,length(test.list)))
-    
-  }
-  
   if(is.pseudocell){
     
     test.list = lapply(test.list, function(s){
@@ -79,10 +75,19 @@ scWGNA.compare = function(scWGCNA.data,
   })
   }
   
+  my.colfrac = data.frame(table(scWGCNA.data$dynamicCols))
+  
   if (!is.null(ortho)) {
+    
+    #Keep track of which genes are lost
+    my.genes[["non-orthologous"]] = data.frame(gene=Expr[which(!Expr %in% ortho[,1])],
+               module=scWGCNA.data$dynamicCols[Expr[which(!Expr %in% ortho[,1])]])
     
     # Keep only the ones present as 1-to-1 orthologues
     Expr = Expr[which(Expr %in% ortho[,1])]
+    
+    # Keep the count on the final numbers, on the table
+    my.colfrac$ortho = as.numeric(table(scWGCNA.data$dynamicCols[Expr]))
     
     #Change the ortho rownames to the reference species, to be able to index it
     rownames(ortho) = ortho[,1]
@@ -126,10 +131,17 @@ scWGNA.compare = function(scWGCNA.data,
   }
   nonex = unique(nonex)
   
+  #Keep track of which genes are lost
+  my.genes[["non-expressed"]] = data.frame(gene=colnames(datExpr[[1]])[nonex],
+                                           module=scWGCNA.data$dynamicCols[colnames(datExpr[[1]])[nonex]])
+  
   #Take then these genes out of the genes we will use to test.
   if (length(nonex)) {
     Expr = colnames(datExpr[[1]])[-nonex]
   } else {Expr = colnames(datExpr[[1]])}
+  
+  my.colfrac$expr = as.numeric(table(scWGCNA.data$dynamicCols[Expr]))
+  colnames(my.colfrac) = c("module","total","ortho","expr")
   
   #Take only those genes in the expression matrix
   for (t in 1:length(datExpr)) {
@@ -168,6 +180,12 @@ scWGNA.compare = function(scWGCNA.data,
                                    ...)
   })
   
+  mp$misc = list(
+    modulefrac = my.colfrac,
+    geneslost = my.genes,
+    testnames = test.names
+    )
+
   options(backup.options)
   
   return(mp)
