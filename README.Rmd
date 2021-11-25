@@ -178,7 +178,7 @@ This is basically running the modulePreservation function from WGCNA, using the 
 For this, we use data from another species as the test, which will be compared against the reference (our calculated scWGCNA data).
 For this, in case we have different species, we need a table of 1-to-1 orthologues.
 
-```{r}
+```{r warning=FALSE}
 # A Seurat object with chicken limb cells
 my.small_GgLimbHH29
 
