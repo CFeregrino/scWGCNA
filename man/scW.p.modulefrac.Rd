@@ -8,8 +8,6 @@ scW.p.modulefrac(scWGCNA.comp.data)
 }
 \arguments{
 \item{scWGCNA.comp.data}{scWGCNA comparative data as calculated by scWGNA.compare().}
-
-\item{module}{numeric . Which module should be plotted?}
 }
 \value{
 A ggplot barplot
@@ -19,7 +17,7 @@ This function will plot a barplot showing what's the fraction of genes in each m
 }
 \examples{
 
-# S pre-calculated list scWGCNA comparative data, calculated with scWGCNA.compare
+# A pre-calculated list scWGCNA comparative data, calculated with scWGCNA.compare
 class(MmvGg.comparative)
 
 # Plot the fraction of genes used for the comparison.

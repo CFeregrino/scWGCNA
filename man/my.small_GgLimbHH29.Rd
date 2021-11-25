@@ -3,18 +3,17 @@
 \docType{data}
 \name{my.small_GgLimbHH29}
 \alias{my.small_GgLimbHH29}
-\title{Prices of 50,000 round cut diamonds.}
+\title{A pre-analyzed, sub-sampled Seurat object, of single cell RNA-seq from chicken Limbs at stage HH29}
 \format{
 A Seurat object, used as example
 }
 \source{
-This package
+https://doi.org/10.1002/dvdy.384 sub-sampled for this package
 }
 \usage{
 my.small_GgLimbHH29
 }
 \description{
-A dataset containing the prices and other attributes of almost 54,000
-diamonds.
+A Seurat object containing different analyses and other data
 }
 \keyword{datasets}

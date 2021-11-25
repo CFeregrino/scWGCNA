@@ -16,14 +16,18 @@
 #' @importFrom graphics par
 #' @examples
 #' 
-#' # We calculate first pseudocells
-#' MmLimbE155.ps=calculate.pseudocells(my.small_MmLimbE155, dims = 1:10)
+#' # A pre-analyzed Seurat object, subsampled
+#' my.small_MmLimbE155
+#' MmLimb.sc = my.small_MmLimbE155
 #' 
-#' # We use all the features in this small example dataset. These are pre-computed highly variable genes.
-#' my.f = rownames(my.small_MmLimbE155)
+#' # We calculate first pseudocells
+#' MmLimb.ps=calculate.pseudocells(MmLimb.sc, dims = 1:10)
+#' 
+#' # We use all the features in this small example data. These are pre-computed highly variable genes.
+#' my.f = rownames(MmLimb.sc)
 #' 
 #' # Use the pseudocells and single cells to calculate modules
-#' MmLimbE155.scWGCNA = run.scWGCNA(p.cells = MmLimbE155.ps, s.cells = my.small_MmLimbE155, features = my.f)
+#' MmLimb.scWGCNA = run.scWGCNA(p.cells = MmLimb.ps, s.cells = MmLimb.sc, features = my.f)
 #' 
 
 run.scWGCNA = function(p.cells,

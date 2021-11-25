@@ -3,9 +3,9 @@
 \docType{data}
 \name{MmvGg.comparative}
 \alias{MmvGg.comparative}
-\title{Prices of 50,000 round cut diamonds.}
+\title{A pre-computed comparative scWGCNA list calculated from the Mouse limb and Chicken data.}
 \format{
-A Seurat Object, used as example
+A comparative scWGCNA list object, used as example
 }
 \source{
 This package
@@ -14,7 +14,6 @@ This package
 MmvGg.comparative
 }
 \description{
-A dataset containing the prices and other attributes of almost 54,000
-diamonds.
+A comparative scWGCNA data list containing the different statistics and calculations
 }
 \keyword{datasets}

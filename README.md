@@ -11,7 +11,8 @@ functionality is presented in
 <a href="http://doi.org/10.1002/dvdy.384" target="_blank">Feregrino &
 Tschopp 2021</a>
 
-The new version of the package allows for a better workflow.
+The new version of the package allows for a better workflow, and more
+interaction with the data.
 
 scWGCNA works with Seurat objects.
 
@@ -39,7 +40,7 @@ To install scWGCNA run in R:
 ### Pseudocell calculation
 
 -   Our first step is to calculate pseudocells from a Seurat object with
-    pre.calculated PCA (or other reductions) and cell clusters. For this
+    pre-calculated PCA (or other reductions) and cell clusters. For this
     example we are using the small pbmc dataset from Seurat.
     **Warning**: This might be very time or memory consuming depending
     on the size of your dataset. (ca. 15 minutes for 10k cells).
@@ -173,7 +174,7 @@ MmLimbE155.scWGCNA = run.scWGCNA(p.cells = MmLimbE155.pcells, # Pseudocells (rec
 
 ``` r
 # Plot the gene / modules dendrogram
-scWGCNA.plotdendro(scWGCNA.data = MmLimbE155.scWGCNA)
+scW.p.dendro(scWGCNA.data = MmLimbE155.scWGCNA)
 ```
 
 <img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
@@ -254,28 +255,103 @@ head(MmLimbE155.scWGCNA[["MEList"]]$averageExpr)
 #> AGGTCATAGTCGTACT -0.2835482
 ```
 
+-   Using the information of the modules we calculated, we can also
+    calculate what’s the average expression of each module in any set of
+    cells. This, as long as we have a seurat object with the same gene
+    names as the ones used to calculate the modules. This is very useful
+    to calculate expression and module activityin any other dataset, as
+    if it was any gene.
+-   Moreover, we can calculate the membership of each gene to its
+    module, taking as a reference the expression of any other expression
+    dataset. These memberships, can be then compared across samples.
+
+``` r
+# Here we can calculate the different eigengenes, using the single cell data from the mouse.
+MmLimb.eigengenes.sc = scW.eigen(modules = MmLimbE155.scWGCNA, seurat = my.small_MmLimbE155)
+
+# We can then find the expression of the different modules in this slot
+head(MmLimb.eigengenes.sc$Module.Eigengenes$averageExpr)
+#>                      AEblue     AEbrown     AEgreen       AEred AEturquoise
+#> CTTTGCGGTGCTAGCC -0.5666050 -0.20630177 -0.12556986 -0.30354656 0.220587445
+#> CAGCCGAAGTCACGCC -0.5668321  0.10371440 -0.25138105 -0.16558827 0.273107282
+#> GCGACCAAGAATCTCC -0.5973933  0.20560227 -0.25138105  0.07360435 0.001758538
+#> TGACAACCACCTGGTG -0.4834014 -0.03744077 -0.14168952 -0.10494178 0.526712095
+#> TGCGCAGCAGCGTAAG -0.5456373 -0.13535372 -0.05391711 -0.35849142 0.566142348
+#> TGACTTTCAGACAAAT -0.4305833 -0.12896541 -0.09961819 -0.13392250 0.533846124
+#>                    AEyellow
+#> CTTTGCGGTGCTAGCC -0.2593248
+#> CAGCCGAAGTCACGCC -0.2593248
+#> GCGACCAAGAATCTCC -0.2593248
+#> TGACAACCACCTGGTG -0.2095787
+#> TGCGCAGCAGCGTAAG -0.2095787
+#> TGACTTTCAGACAAAT -0.1710189
+
+# we can explore the membership of each gene to its module, by examining the scWGCNA data list object
+head(MmLimbE155.scWGCNA[["modules"]]$`1_blue`)
+#>                    Membership        p.val
+#> ENSMUSG00000001403  0.8688156 2.911492e-16
+#> ENSMUSG00000029177  0.7782598 2.901329e-11
+#> ENSMUSG00000020649  0.5091048 1.596436e-04
+#> ENSMUSG00000026547  0.3771343 6.938527e-03
+#> ENSMUSG00000026605  0.8699181 2.408654e-16
+#> ENSMUSG00000030654  0.7681162 7.490872e-11
+
+# And we can access the membership and pvalues calculated from another data set, by looking at these tables
+head(MmLimb.eigengenes.sc$Gene.Module.Membership)
+#>                         kMEblue    kMEbrown      kMEgreen       kMEred
+#> ENSMUSG00000068614  0.004988158 -0.04243095  0.0001841659 -0.075004805
+#> ENSMUSG00000026459  0.023773792 -0.05955297 -0.0009830381 -0.056949537
+#> ENSMUSG00000064179  0.034404667 -0.07224691 -0.0116670263 -0.032814308
+#> ENSMUSG00000047281  0.040337292 -0.03565635  0.9270536633 -0.154764603
+#> ENSMUSG00000018339 -0.077220611  0.89845543 -0.0075343859  0.002345408
+#> ENSMUSG00000001506  0.055833156 -0.03407945 -0.1787681447  0.574112631
+#>                    kMEturquoise    kMEyellow
+#> ENSMUSG00000068614   -0.2716580  0.943436524
+#> ENSMUSG00000026459   -0.2583756  0.959116813
+#> ENSMUSG00000064179   -0.2976944  0.906089885
+#> ENSMUSG00000047281   -0.3096576 -0.057360936
+#> ENSMUSG00000018339   -0.1570514 -0.005080984
+#> ENSMUSG00000001506   -0.3107846 -0.121632199
+
+head(MmLimb.eigengenes.sc$Module.Membership.Pvalue)
+#>                      kMEblue      kMEbrown      kMEgreen       kMEred
+#> ENSMUSG00000068614 0.9336571  4.786839e-01  9.975478e-01 2.100342e-01
+#> ENSMUSG00000026459 0.6915142  3.198711e-01  9.869111e-01 3.415206e-01
+#> ENSMUSG00000064179 0.5657468  2.273325e-01  8.456201e-01 5.838542e-01
+#> ENSMUSG00000047281 0.5006698  5.516868e-01 6.967296e-121 9.364909e-03
+#> ENSMUSG00000018339 0.1968385 9.780259e-102  8.999392e-01 9.687780e-01
+#> ENSMUSG00000001506 0.3510834  5.694277e-01  2.633136e-03 4.895266e-26
+#>                    kMEturquoise     kMEyellow
+#> ENSMUSG00000068614 3.824370e-06 8.673511e-136
+#> ENSMUSG00000026459 1.151530e-05 5.618899e-155
+#> ENSMUSG00000064179 3.700557e-07 3.123332e-106
+#> ENSMUSG00000047281 1.167770e-07  3.380388e-01
+#> ENSMUSG00000018339 8.356595e-03  9.324254e-01
+#> ENSMUSG00000001506 1.044741e-07  4.160905e-02
+```
+
 -   We can also plot what’s the mean expression of all, or each module,
     across the single cells
 
 ``` r
 # Plot the expression of all modules at once
-scWGCNA.plotexpression(s.cells = my.small_MmLimbE155, # Single cells in Seurat format
+scW.p.expression(s.cells = my.small_MmLimbE155, # Single cells in Seurat format
                        scWGCNA.data = MmLimbE155.scWGCNA, # scWGCNA list dataset
                        modules = "all", # Which modules to plot?
                        reduction = "tsne", # Which reduction to plot?
                        ncol=3) # How many columns to use, in case we're plotting several?
 ```
 
-<img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
 
 ``` r
 #Plot only the expression of the first module, "blue"
-scWGCNA.plotexpression(s.cells = my.small_MmLimbE155,
+scW.p.expression(s.cells = my.small_MmLimbE155,
                        scWGCNA.data = MmLimbE155.scWGCNA,
                        modules = 1)
 ```
 
-<img src="man/figures/README-unnamed-chunk-6-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-7-2.png" width="100%" />
 
 -   We can also plot the different modules in a network visualization,
     to observe the relationships between the genes.
@@ -288,31 +364,1566 @@ MmLimbE155.scWGCNA = scWGCNA.networks(scWGCNA.data = MmLimbE155.scWGCNA)
 #>   +.gg   ggplot2
 
 # Plot the module "blue" as a network
-scWGCNA.plotnetwork(MmLimbE155.scWGCNA, module=1)
+scW.p.network(MmLimbE155.scWGCNA, module=1)
 ```
 
-<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
 
 ``` r
 # Plot the module "blue" as a network. Again, we are using gene unique identifiers, not very informative.
 # For this, we use the gene names translation we had before.
-scWGCNA.plotnetwork(MmLimbE155.scWGCNA, module=1, gnames = my.gnames)
+scW.p.network(MmLimbE155.scWGCNA, module=1, gnames = my.gnames)
 ```
 
-<img src="man/figures/README-unnamed-chunk-7-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-8-2.png" width="100%" />
 
--   Perform comparative WCGNA analyses and output an integrated HTML
-    report
+### Module comparison accross samples
 
-<!-- -->
+-   We can now run a comparative analysis against other samples
+    (different species, treatments, etc.).  
+    This is basically running the modulePreservation function from
+    WGCNA, using the data we have generated so far. For this, we use
+    data from another species as the test, which will be compared
+    against the reference (our calculated scWGCNA data). For this, in
+    case we have different species, we need a table of 1-to-1
+    orthologues.
 
-    scWGNA.compare.report(data, test, test.names, project.name, ortho, ortho.sp)
+``` r
+# A Seurat object with chicken limb cells
+my.small_GgLimbHH29
+#> An object of class Seurat 
+#> 489 features across 288 samples within 2 assays 
+#> Active assay: SCT (239 features, 196 variable features)
+#>  1 other assay present: RNA
+#>  3 dimensional reductions calculated: pca, xtsne, tsne
 
-## Output examples
+# We calculate pseudocells for this object
+Gg.ps=calculate.pseudocells(my.small_GgLimbHH29, dims = 1:10)
+#> Computing nearest neighbor graph
+#> Computing SNN
+#> Choosing seeds
+#> 254 out of 288 Cells will be agreggated into 50 Pseudocells
+#> Assining pseudocells
+#> Aggregating pseudocell expression
+#> Warning: The following arguments are not used: row.names
 
-These are the HTML outputs you can expect from the functions. The data
-used in our publication produced [this HTML report
-output](https://htmlpreview.github.io/?https://github.com/CFeregrino/scWGCNA/blob/main/HTMLexamples/WGCNA_report_E15test3_080421.html)
-from the scWGNA.report function, and [this HTML report
-output](https://htmlpreview.github.io/?https://github.com/CFeregrino/scWGCNA/blob/main/HTMLexamples/WGNA_comparative_E15.nb.html)
-from the scWGNA.compare.report function.
+# Our Seurat objects contain gene names equivalencies in the misc slot.
+# We use them to biuld a table of orthologous genes
+my.ortho = merge(my.small_MmLimbE155@misc$gnames,my.small_GgLimbHH29@misc$gnames, by = "Gene.name")
+head(my.ortho)
+#>   Gene.name   Gene.stable.ID.x   Gene.stable.ID.y
+#> 1         a ENSMUSG00000027596 ENSGALG00000039101
+#> 2      Acan ENSMUSG00000030607 ENSGALG00000006725
+#> 3     Acta2 ENSMUSG00000035783 ENSGALG00000006343
+#> 4     Actc1 ENSMUSG00000068614 ENSGALG00000009844
+#> 5   Adamts1 ENSMUSG00000022893 ENSGALG00000040342
+#> 6   Adcyap1 ENSMUSG00000024256 ENSGALG00000014858
+my.ortho=my.ortho[,2:3]
+
+# We then run the comparative analysis
+MmvGg.comparative = scWGNA.compare(scWGCNA.data = MmLimbE155.scWGCNA,
+                                   test.list = list(Gg.ps),
+                                   test.names = c("Gg"),
+                                   ortho = my.ortho, # not needed unless reference and tests have different gene names
+                                   ortho.sp = c(2))
+#>   ..Excluding 15 genes from the calculation due to too many missing samples or zero variance.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+
+#> Warning in bicor(datExpr, datME, , use = "p"): bicor: zero MAD in variable 'x'.
+#> Pearson correlation was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRef[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datRefP[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+#> Warning in bicor(datTest[, modGenes[[j]]], use = "p", quick =
+#> as.numeric(opt$quickCor)): bicor: zero MAD in variable 'x'. Pearson correlation
+#> was used for individual columns with zero (or missing) MAD.
+```
+
+-   We can now check if any genes were “lost”, due to not being present
+    as 1-to-1 orthologues (if it’s the case), or not being expressed in
+    all samples.
+
+-   **Very important**, we suggest to make the calculation of modules,
+    with genes that you will already find in other samples from the very
+    beginning. Nonetheless, we show here how to go about in case you
+    didn’t.
+
+``` r
+# We can see how many genes are present in each module, at each category. In the misc slot of the scWGCNA comparative list object
+MmvGg.comparative$misc$modulefrac
+#>      module total ortho expr
+#> 1      blue    27    26   26
+#> 2     brown    22    19   17
+#> 3     green    17    16   11
+#> 4       red    16    15   15
+#> 5 turquoise    33    33   33
+#> 6    yellow    19    18   10
+
+# And the identity of the lost genes is found under the same slot
+MmvGg.comparative$misc$geneslost
+#> $`non-orthologous`
+#>                                  gene module
+#> ENSMUSG00000090122 ENSMUSG00000090122 yellow
+#> ENSMUSG00000050578 ENSMUSG00000050578  brown
+#> ENSMUSG00000074457 ENSMUSG00000074457  green
+#> ENSMUSG00000054200 ENSMUSG00000054200  brown
+#> ENSMUSG00000029177 ENSMUSG00000029177   blue
+#> ENSMUSG00000022015 ENSMUSG00000022015  brown
+#> ENSMUSG00000020053 ENSMUSG00000020053    red
+#> 
+#> $`non-expressed`
+#>                                  gene module
+#> ENSMUSG00000028435 ENSMUSG00000028435  green
+#> ENSMUSG00000022661 ENSMUSG00000022661  brown
+#> ENSMUSG00000027107 ENSMUSG00000027107 yellow
+#> ENSMUSG00000032060 ENSMUSG00000032060 yellow
+#> ENSMUSG00000026208 ENSMUSG00000026208 yellow
+#> ENSMUSG00000009214 ENSMUSG00000009214 yellow
+#> ENSMUSG00000026459 ENSMUSG00000026459 yellow
+#> ENSMUSG00000047281 ENSMUSG00000047281  green
+#> ENSMUSG00000012428 ENSMUSG00000012428  brown
+#> ENSMUSG00000026418 ENSMUSG00000026418 yellow
+#> ENSMUSG00000026414 ENSMUSG00000026414 yellow
+#> ENSMUSG00000032013 ENSMUSG00000032013  green
+#> ENSMUSG00000049436 ENSMUSG00000049436  green
+#> ENSMUSG00000049641 ENSMUSG00000049641 yellow
+#> ENSMUSG00000033227 ENSMUSG00000033227  green
+
+# We can also plot these fractions as barplots, for each module we used for comparisons
+scW.p.modulefrac(MmvGg.comparative)
+#> Using module as id variables
+```
+
+<img src="man/figures/README-unnamed-chunk-10-1.png" width="100%" />
+
+-   Finally, we can plot the different aspects of the module
+    conservation (“preservation”, as the authors of WGCNA refere to).
+
+Here, we can plot 4 different aspects, the zscore of the overall
+preservation, which according to the original authors of WGCNA, is
+understood as a threshold. Values under 2 mean no evidence of
+preservation in the test sample, over 10 mean strong evidence of
+preservation. Moreover, we can plot the median rank, which we can use to
+compare the preservation of the different modules. And, to go into
+details of the modules, we can plot the zscore of density and
+connectivity preservation.
+
+``` r
+# Here we can plot the overall preservation and median rank.
+scW.p.preservation(scWGCNA.comp.data = MmvGg.comparative,
+                   to.plot=c("preservation", "median.rank"))
+#> Warning: Removed 4 rows containing missing values (geom_text).
+```
+
+<img src="man/figures/README-unnamed-chunk-11-1.png" width="100%" />
+
+``` r
+# We can also plot the preservation of density and connectivity.
+scW.p.preservation(scWGCNA.comp.data = MmvGg.comparative,
+                   to.plot=c("density", "connectivity"))
+#> Warning: Removed 1 rows containing missing values (geom_hline).
+#> Warning: Removed 1 rows containing missing values (geom_hline).
+```
+
+<img src="man/figures/README-unnamed-chunk-11-2.png" width="100%" />
+
+While these are the only aspects we plot here, all other aspects of the
+preservation can be explored in the list object we obtained. We refer
+the user to read the original publications:
+<a href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1001057" target="_blank">Langfelder
+P, Luo R, Oldham MC, Horvath S (2011) Is My Network Module Preserved and
+Reproducible?. PLOS Computational Biology 7(1): e1001057</a>

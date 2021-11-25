@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 scWGCNA is an adaptation of WGCNA to work with single-cell datasets.
 The functionality is presented in  <a href="http://doi.org/10.1002/dvdy.384" target="_blank">Feregrino & Tschopp 2021</a>
 
-The new version of the package allows for a better workflow.
+The new version of the package allows for a better workflow, and more interaction with the data.
 
 scWGCNA works with Seurat objects.
 
@@ -48,7 +48,7 @@ devtools::install_github("cferegrino/scWGCNA", ref="main")
 
 ### Pseudocell calculation
 
-* Our first step is to calculate pseudocells from a Seurat object with pre.calculated PCA (or other reductions) and cell clusters.
+* Our first step is to calculate pseudocells from a Seurat object with pre-calculated PCA (or other reductions) and cell clusters.
 For this example we are using the small pbmc dataset from Seurat.
 **Warning**: This might be very time or memory consuming depending on the size of your dataset. (ca. 15 minutes for 10k cells). Consider to run this on a script for a dedicated job.
 
@@ -92,7 +92,7 @@ MmLimbE155.scWGCNA = run.scWGCNA(p.cells = MmLimbE155.pcells, # Pseudocells (rec
 
 ```{r}
 # Plot the gene / modules dendrogram
-scWGCNA.plotdendro(scWGCNA.data = MmLimbE155.scWGCNA)
+scW.p.dendro(scWGCNA.data = MmLimbE155.scWGCNA)
 
 #Look at the membership tables
 names(MmLimbE155.scWGCNA$modules)
@@ -119,18 +119,38 @@ head(MmLimbE155.scWGCNA[["MEList"]]$averageExpr)
 
 ```
 
+* Using the information of the modules we calculated, we can also calculate what's the average expression of each module in any set of cells. This, as long as we have a seurat object with the same gene names as the ones used to calculate the modules. This is very useful to calculate expression and module activityin any other dataset, as if it was any gene.
+* Moreover, we can calculate the membership of each gene to its module, taking as a reference the expression of any other expression dataset. These memberships, can be then compared across samples.
+
+```{r}
+# Here we can calculate the different eigengenes, using the single cell data from the mouse.
+MmLimb.eigengenes.sc = scW.eigen(modules = MmLimbE155.scWGCNA, seurat = my.small_MmLimbE155)
+
+# We can then find the expression of the different modules in this slot
+head(MmLimb.eigengenes.sc$Module.Eigengenes$averageExpr)
+
+# we can explore the membership of each gene to its module, by examining the scWGCNA data list object
+head(MmLimbE155.scWGCNA[["modules"]]$`1_blue`)
+
+# And we can access the membership and pvalues calculated from another data set, by looking at these tables
+head(MmLimb.eigengenes.sc$Gene.Module.Membership)
+
+head(MmLimb.eigengenes.sc$Module.Membership.Pvalue)
+
+```
+
 * We can also plot what's the mean expression of all, or each module, across the single cells
 
 ```{r}
 # Plot the expression of all modules at once
-scWGCNA.plotexpression(s.cells = my.small_MmLimbE155, # Single cells in Seurat format
+scW.p.expression(s.cells = my.small_MmLimbE155, # Single cells in Seurat format
                        scWGCNA.data = MmLimbE155.scWGCNA, # scWGCNA list dataset
                        modules = "all", # Which modules to plot?
                        reduction = "tsne", # Which reduction to plot?
                        ncol=3) # How many columns to use, in case we're plotting several?
 
 #Plot only the expression of the first module, "blue"
-scWGCNA.plotexpression(s.cells = my.small_MmLimbE155,
+scW.p.expression(s.cells = my.small_MmLimbE155,
                        scWGCNA.data = MmLimbE155.scWGCNA,
                        modules = 1)
 
@@ -143,21 +163,73 @@ scWGCNA.plotexpression(s.cells = my.small_MmLimbE155,
 MmLimbE155.scWGCNA = scWGCNA.networks(scWGCNA.data = MmLimbE155.scWGCNA)
 
 # Plot the module "blue" as a network
-scWGCNA.plotnetwork(MmLimbE155.scWGCNA, module=1)
+scW.p.network(MmLimbE155.scWGCNA, module=1)
 
 # Plot the module "blue" as a network. Again, we are using gene unique identifiers, not very informative.
 # For this, we use the gene names translation we had before.
-scWGCNA.plotnetwork(MmLimbE155.scWGCNA, module=1, gnames = my.gnames)
+scW.p.network(MmLimbE155.scWGCNA, module=1, gnames = my.gnames)
 
 ```
 
-* Perform comparative WCGNA analyses and output an integrated HTML report
+### Module comparison accross samples
+
+* We can now run a comparative analysis against other samples (different species, treatments, etc.).  
+This is basically running the modulePreservation function from WGCNA, using the data we have generated so far.
+For this, we use data from another species as the test, which will be compared against the reference (our calculated scWGCNA data).
+For this, in case we have different species, we need a table of 1-to-1 orthologues.
+
+```{r}
+# A Seurat object with chicken limb cells
+my.small_GgLimbHH29
+
+# We calculate pseudocells for this object
+Gg.ps=calculate.pseudocells(my.small_GgLimbHH29, dims = 1:10)
+
+# Our Seurat objects contain gene names equivalencies in the misc slot.
+# We use them to biuld a table of orthologous genes
+my.ortho = merge(my.small_MmLimbE155@misc$gnames,my.small_GgLimbHH29@misc$gnames, by = "Gene.name")
+head(my.ortho)
+my.ortho=my.ortho[,2:3]
+
+# We then run the comparative analysis
+MmvGg.comparative = scWGNA.compare(scWGCNA.data = MmLimbE155.scWGCNA,
+                                   test.list = list(Gg.ps),
+                                   test.names = c("Gg"),
+                                   ortho = my.ortho, # not needed unless reference and tests have different gene names
+                                   ortho.sp = c(2))
 
 ```
-scWGNA.compare.report(data, test, test.names, project.name, ortho, ortho.sp)
+
+* We can now check if any genes were "lost", due to not being present as 1-to-1 orthologues (if it's the case), or not being expressed in all samples.
+
+* **Very important**, we suggest to make the calculation of modules, with genes that you will already find in other samples from the very beginning. Nonetheless, we show here how to go about in case you didn't.
+
+```{r}
+# We can see how many genes are present in each module, at each category. In the misc slot of the scWGCNA comparative list object
+MmvGg.comparative$misc$modulefrac
+
+# And the identity of the lost genes is found under the same slot
+MmvGg.comparative$misc$geneslost
+
+# We can also plot these fractions as barplots, for each module we used for comparisons
+scW.p.modulefrac(MmvGg.comparative)
 ```
 
-## Output examples
-These are the HTML outputs you can expect from the functions.
-The data used in our publication produced [this HTML report output](https://htmlpreview.github.io/?https://github.com/CFeregrino/scWGCNA/blob/main/HTMLexamples/WGCNA_report_E15test3_080421.html) from the scWGNA.report function, and [this HTML report output](https://htmlpreview.github.io/?https://github.com/CFeregrino/scWGCNA/blob/main/HTMLexamples/WGNA_comparative_E15.nb.html) from the scWGNA.compare.report function.
+* Finally, we can plot the different aspects of the module conservation ("preservation", as the authors of WGCNA refere to).
+
+Here, we can plot 4 different aspects, the zscore of the overall preservation, which according to the original authors of WGCNA, is understood as a threshold. Values under 2 mean no evidence of preservation in the test sample, over 10 mean strong evidence of preservation. Moreover, we can plot the median rank, which we can use to compare the preservation of the different modules. And, to go into details of the modules, we can plot the zscore of density and connectivity preservation.  
+
+
+```{r}
+# Here we can plot the overall preservation and median rank.
+scW.p.preservation(scWGCNA.comp.data = MmvGg.comparative,
+                   to.plot=c("preservation", "median.rank"))
+
+# We can also plot the preservation of density and connectivity.
+scW.p.preservation(scWGCNA.comp.data = MmvGg.comparative,
+                   to.plot=c("density", "connectivity"))
+```
+
+While these are the only aspects we plot here, all other aspects of the preservation can be explored in the list object we obtained. We refer the user to read the original publications:
+<a href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1001057" target="_blank">Langfelder P, Luo R, Oldham MC, Horvath S (2011) Is My Network Module Preserved and Reproducible?. PLOS Computational Biology 7(1): e1001057</a>
 

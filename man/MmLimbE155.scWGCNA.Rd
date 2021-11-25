@@ -3,7 +3,7 @@
 \docType{data}
 \name{MmLimbE155.scWGCNA}
 \alias{MmLimbE155.scWGCNA}
-\title{Prices of 50,000 round cut diamonds.}
+\title{A pre-computed scWGCNA list calculated from the Mouse limb data.}
 \format{
 A scWGCNA list object, used as example
 }
@@ -14,7 +14,6 @@ This package
 MmLimbE155.scWGCNA
 }
 \description{
-A dataset containing the prices and other attributes of almost 54,000
-diamonds.
+A scWGCNA data list containing the different modules, statistics and calculations
 }
 \keyword{datasets}
