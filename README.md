@@ -41,6 +41,19 @@ devtools::install_github("cferegrino/scWGCNA", ref="main")
 
 ## Basic scWGCNA workflow
 
+**A few words on data**: \* This package is an adaptation of WGCNA,
+which was originally intended to find modules of co-expression in
+RNA-seq bulk data. We are therefore not sure of how it would behave with
+multi-batch data, and batch effects. We suggest to calculate modules
+based on one sample / library.  
+\* If you are planning to compare the modules of co-expression across
+samples (conditions / species) try to restrict the analysis to genes
+that are present and expressed across all samples, to obtain the best
+results.  
+\* This package works with Seurat objects, we therefore suggest to bare
+in mind and control what your default assay is, since this is used by
+the different functions.
+
 ### Pseudocell calculation
 
 -   Our first step is to calculate pseudocells from a Seurat object with
