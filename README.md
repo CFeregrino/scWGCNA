@@ -35,6 +35,10 @@ transcriptome dynamics in homologous cell types. bioRxiv
 
 To install scWGCNA run in R:
 
+``` r
+devtools::install_github("cferegrino/scWGCNA", ref="main")
+```
+
 ## Basic scWGCNA workflow
 
 ### Pseudocell calculation

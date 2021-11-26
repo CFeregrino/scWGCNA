@@ -38,7 +38,7 @@ scWGCNA works with Seurat objects.
 
 To install scWGCNA run in R:
 
-```{r eval = FALSE, echo = FALSE}
+```{r eval = FALSE}
 
 devtools::install_github("cferegrino/scWGCNA", ref="main")
 
