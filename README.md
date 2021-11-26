@@ -12,7 +12,8 @@ functionality is presented in
 Tschopp 2021</a>
 
 The new version of the package allows for a better workflow, and more
-interaction with the data.
+interaction with the data. The package no longer produces markdown html
+reports, nor it saves files by itself.
 
 scWGCNA works with Seurat objects.
 
