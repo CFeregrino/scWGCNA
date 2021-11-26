@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# scWGCNA
+# scWGCNA V 1.0.0
 
 <!-- badges: start -->
 <!-- badges: end -->
