@@ -1,11 +1,12 @@
 #' Chooses a soft-tresholding power
 #' 
 #' This function examines the data to find a suitable soft-thresholding power. It also helps to know if there is a scale-free topology.
-#' @param datexpr A matrix of gene expression. Thi SHOULD BE the expression data normally stores under ´@assays$RNA@data´ for single cell objects or ´@assays$RNA@counts´ for pseudocells. This has to contain ONLY the genes used for analysis.
+#' @param datexpr A matrix of gene expression. Thi SHOULD BE the expression data normally stores under @@assays$RNA@@data for single cell objects or ´@assays$RNA@counts´ for pseudocells. This has to contain ONLY the genes used for analysis.
 #' @return A number representing the soft-thresholding power with the highest scale-free topology fit index. And a message about it
+#' @importFrom graphics abline text
 #' @export
 #' @examples
-#' ps.pbmc_small=choose.sfttp(SeuratObject::pbmc_small@assays$RNA@data)
+#' ps.pbmc_small=choose.sfttp(SeuratObject::pbmc_small@@assays$RNA@@data)
 
 choose.sfttp = function(datexpr){
   
@@ -36,7 +37,7 @@ choose.sfttp = function(datexpr){
   
   if ( !any( indexes > 0.4 ) ) {
     print("The scale-free topology index didn't reach 0.4 with any of the chosen powers, the process will not continue, since it might fail")
-    quit(save = "no", 1, F)
+    stop("The scale-free topology index didn't reach 0.4 with any of the chosen powers, the process will not continue, since it might fail")
   }
   
   # Take the smalles power that gives us an index over 0.9, or the highest index if we don't reach 0.9

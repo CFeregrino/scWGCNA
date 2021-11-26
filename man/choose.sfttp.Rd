@@ -7,7 +7,7 @@
 choose.sfttp(datexpr)
 }
 \arguments{
-\item{datexpr}{A matrix of gene expression. Thi SHOULD BE the expression data normally stores under ´@assays$RNA@data´ for single cell objects or ´@assays$RNA@counts´ for pseudocells. This has to contain ONLY the genes used for analysis.}
+\item{datexpr}{A matrix of gene expression. This SHOULD BE the expression data normally stored under ´@assays$RNA@data´ for single cell objects or ´@assays$RNA@counts´ for pseudocells. This has to contain ONLY the genes used for analysis.}
 }
 \value{
 A number representing the soft-thresholding power with the highest scale-free topology fit index. And a message about it

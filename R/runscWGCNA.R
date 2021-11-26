@@ -12,12 +12,22 @@
 #' @return A list object with the resulting WGCNA data. 
 #' @export
 #' @importFrom WGCNA bicor
+#' @importFrom stats as.dist hclust var
+#' @importFrom graphics par
 #' @examples
-#' # Calculate pseudocells
-#' ps.pbmc_small=calculate.pseudocells(SeuratObject::pbmc_small, dims = 1:10)
 #' 
-#' # Use pseudocells and single cells to calculate WGCNA
-#' scWGNA.pbmc_small = run.scWGCNA(p.cells = ps.pbmc_small, s.cells = Seurat::pbmc_small)
+#' # A pre-analyzed Seurat object, subsampled
+#' my.small_MmLimbE155
+#' MmLimb.sc = my.small_MmLimbE155
+#' 
+#' # We calculate first pseudocells
+#' MmLimb.ps=calculate.pseudocells(MmLimb.sc, dims = 1:10)
+#' 
+#' # We use all the features in this small example data. These are pre-computed highly variable genes.
+#' my.f = rownames(MmLimb.sc)
+#' 
+#' # Use the pseudocells and single cells to calculate modules
+#' MmLimb.scWGCNA = run.scWGCNA(p.cells = MmLimb.ps, s.cells = MmLimb.sc, features = my.f)
 #' 
 
 run.scWGCNA = function(p.cells,
@@ -38,14 +48,14 @@ run.scWGCNA = function(p.cells,
   # If we need to subset the data
   if (!missing(idents)) {
     s.Wdata = subset(s.cells, idents=idents)
-  } else s.Wdata = s.cells
+  } else {s.Wdata = s.cells}
   
   # If we are using IDs or symbols
   if (missing(g.names)) {
     gnames= data.frame(x=rownames(p.cells),y=rownames(p.cells), row.names = rownames(p.cells))
   }  else {gnames = g.names; rownames(gnames) = gnames[1,]}
   
-  nonex = which(apply(s.Wdata@assays$RNA@counts, 1, function(x) length(which(x >0))) < my.min.cell)
+  nonex = which(apply(s.Wdata@assays$RNA@counts, 1, function(x) length(which(x >0))) < min.cells)
   
   # If no variable genes are provided
   if (missing(features)) {
@@ -54,12 +64,12 @@ run.scWGCNA = function(p.cells,
 
   if (is.pseudocell==T) {
     
-    datExpr=p.cells@assays$RNA@counts[Expr,]
-    datExpr = datExpr[which(Matrix::rowSums(datExpr)>0),]
-    if (length(which(Matrix::rowSums(datExpr)==0))<1) {
+    datExpr=p.cells@assays[[Seurat::DefaultAssay(p.cells)]]@counts[Expr,]
+    if (length(which(apply(datExpr, 1, var)>0))>0) {
       print(paste0("The following variable genes were not found expressed in the pseudocell object:  ",
                    names(which(Matrix::rowSums(datExpr)==0))))
     }
+    datExpr = datExpr[which(apply(datExpr, 1, var)>0),]
     Expr = rownames(datExpr)
     
   } else{datExpr=s.Wdata@assays$RNA@data[Expr,]}
@@ -259,7 +269,7 @@ run.scWGCNA = function(p.cells,
       datExpr=datExpr[,-(which(!(colnames(datExpr)%in%x)))]
     }
     
-    if (change == 2 & my.less == T) {
+    if (change == 2 & less == T) {
       
       cat("\n\nIMPORTANT NOTE!!!\nYou have run this analysis witht the option less=TRUE. This means that the analysis will try to reduce the number of modules detected, based on their expression pattern. If modules have very similar expression profile (distance < 0.25), they will be merged. Moreover, if a module seems to be highly expressed in only 1-3 cells ( cells expressing >2*(max(expression)/3) ), it will be removed.\n")
       
@@ -272,6 +282,25 @@ run.scWGCNA = function(p.cells,
     }
     
   }
+  
+  #We prepare the outputs
+  
+  my.memberships=list()
+  
+  my.cols = as.factor(dynamicColors)
+  
+  for (m in 1:length(levels(my.cols))) {
+    
+    my.mem = cbind(geneModuleMembership[my.cols==levels(my.cols)[m],m,drop=F],
+                   MMPvalue[my.cols==levels(my.cols)[m],m,drop=F])
+    
+    colnames(my.mem) = c("Membership", "p.val")
+    
+    my.memberships[[paste0(m,"_",levels(my.cols)[m])]] = my.mem
+      
+  }
+  
+  
   
   s.MEList = MEList
   
@@ -286,6 +315,7 @@ run.scWGCNA = function(p.cells,
   names(dynamicColors) = colnames(datExpr)
   
   WGCNA_data = list()
+  WGCNA_data[["modules"]] = my.memberships
   WGCNA_data[["expression"]] = datExpr
   WGCNA_data[["dynamicMods"]] = dynamicMods
   WGCNA_data[["dynamicCols"]] = dynamicColors
@@ -299,6 +329,8 @@ run.scWGCNA = function(p.cells,
   WGCNA_data[["adjacency"]]= my.adjacency
   
   return(WGCNA_data)
+  
+  options(backup.options)
   
   }
 

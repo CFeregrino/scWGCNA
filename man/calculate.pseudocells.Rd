@@ -5,7 +5,7 @@
 \title{Calculates pseudocells from a Seurat object}
 \usage{
 calculate.pseudocells(
-  seurat,
+  s.cells,
   seeds = 0.2,
   nn = 10,
   reduction = "pca",
@@ -16,7 +16,7 @@ calculate.pseudocells(
 )
 }
 \arguments{
-\item{seurat}{The seurat object, with pre-computed PCA or other reductions, and the relevant clustering as IDs}
+\item{s.cells}{The seurat object, with pre-computed PCA or other reductions, and the relevant clustering as IDs}
 
 \item{seeds}{The proportion of cells to be used as seeds. Alternatively, a string with the name of the seeds to use. Numeric between 0.1 and 0.9 or string. Default 0.2}
 
@@ -39,5 +39,5 @@ A seurat object of aggregated pseudocells. With average expression. The slot mis
 This function calculates pseudocells from a Seurat object, based on pre-calculated cell clusters and dimentionality reduction. WARNING: This might be time consuming, depending on the size of the dataset.
 }
 \examples{
-ps.pbmc_small=calculate.pseudocells(SeuratObject::pbmc_small, dims = 1:10)
+MmLimbE155.ps=calculate.pseudocells(my.small_MmLimbE155, dims = 1:10)
 }
