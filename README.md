@@ -97,7 +97,11 @@ MmLimbE155.pcells = calculate.pseudocells(s.cells = my.small_MmLimbE155, # Singl
     analyses. For this, we suggest to use the pseudocells, calculated as
     shown above. For the sake of this example, we ask for the analysis
     to be started with all the genes in our example dataset, as this is
-    very small. Normally, the function would find variable genes for us.
+    very small. Normally, the function would find variable genes for
+    us.  
+    **Important** If we obtain many modules with apparent expression in
+    only 1, or a couple of cells, we can use the option “less=T” in this
+    function, to remove such modules.
 
 ``` r
 # Run scWGCNA
@@ -273,11 +277,11 @@ head(MmLimbE155.scWGCNA[["MEList"]]$averageExpr)
 ```
 
 -   Using the information of the modules we calculated, we can also
-    calculate what’s the average expression of each module in any set of
-    cells. This, as long as we have a seurat object with the same gene
-    names as the ones used to calculate the modules. This is very useful
-    to calculate expression and module activityin any other dataset, as
-    if it was any gene.
+    calculate what’s the average expression of each module in any other
+    set of cells. This, as long as we have a Seurat object with the same
+    gene names as the ones used to calculate the modules. This is very
+    useful to calculate expression and module activity in another sample
+    or dataset, and then use the expression as if it was another gene.
 -   Moreover, we can calculate the membership of each gene to its
     module, taking as a reference the expression of any other expression
     dataset. These memberships, can be then compared across samples.
