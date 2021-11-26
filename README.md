@@ -42,24 +42,29 @@ devtools::install_github("cferegrino/scWGCNA", ref="main")
 
 ## Basic scWGCNA workflow
 
-**A few words on data**: \* This package is an adaptation of WGCNA,
-which was originally intended to find modules of co-expression in
-RNA-seq bulk data. We are therefore not sure of how it would behave with
-multi-batch data, and batch effects. We suggest to calculate modules
-based on one sample / library.  
-\* If you are planning to compare the modules of co-expression across
-samples (conditions / species) try to restrict the analysis to genes
-that are present and expressed across all samples, to obtain the best
-results.  
-\* This package works with Seurat objects, we therefore suggest to bare
-in mind and control what your default assay is, since this is used by
-the different functions.
+**A few words on data**:
+
+-   This package is an adaptation of WGCNA, which was originally
+    intended to find modules of co-expression in RNA-seq bulk data. We
+    are therefore not sure of how it would behave with multi-batch data,
+    and batch effects. We suggest to calculate modules based on one
+    sample / library.
+
+-   If you are planning to compare the modules of co-expression across
+    samples (conditions / species) try to restrict the analysis to genes
+    that are present and expressed across all samples, to obtain the
+    best results.
+
+-   This package works with Seurat objects, we therefore suggest to bare
+    in mind and control what your default assay is, since this is used
+    by the different functions.
 
 ### Pseudocell calculation
 
 -   Our first step is to calculate pseudocells from a Seurat object with
     pre-calculated PCA (or other reductions) and cell clusters. For this
-    example we are using the small pbmc dataset from Seurat.
+    example we are using a small subset of one of the datasets we use in
+    our paper.  
     **Warning**: This might be very time or memory consuming depending
     on the size of your dataset. (ca. 15 minutes for 10k cells).
     Consider to run this on a script for a dedicated job.
@@ -100,6 +105,8 @@ MmLimbE155.pcells = calculate.pseudocells(s.cells = my.small_MmLimbE155, # Singl
     to be started with all the genes in our example dataset, as this is
     very small. Normally, the function would find variable genes for
     us.  
+    The function prints some long messages, with important information
+    about the analysis.  
     **Important** If we obtain many modules with apparent expression in
     only 1, or a couple of cells, we can use the option “less=T” in this
     function, to remove such modules.
@@ -189,7 +196,7 @@ MmLimbE155.scWGCNA = run.scWGCNA(p.cells = MmLimbE155.pcells, # Pseudocells (rec
 
 ### Modules of co-expression
 
--   We can now see which modules where detected by WGCNA after the
+-   We can now see which modules were detected by WGCNA after the
     iterations
 -   Very important, we can see what is the **average expression** of
     each module per cell, or pseudocell.
