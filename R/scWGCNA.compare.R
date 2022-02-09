@@ -146,7 +146,7 @@ scWGNA.compare = function(scWGCNA.data,
   } else {Expr = colnames(datExpr[[1]])}
   
   my.colfrac$expr = as.numeric(table(scWGCNA.data$dynamicCols[Expr]))
-  colnames(my.colfrac) = c("module","total","ortho","expr")
+  colnames(my.colfrac) = ifelse(!is.null(ortho), c("module","total","ortho","expr"),  c("module","total","expr")) 
   
   #Take only those genes in the expression matrix
   for (t in 1:length(datExpr)) {
