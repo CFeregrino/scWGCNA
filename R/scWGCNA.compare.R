@@ -121,6 +121,9 @@ scWGNA.compare = function(scWGCNA.data,
     for (t in 1:length(test.list)) {
       #Take only genes that are present in all of our expression matrices.
       Expr=Expr[which(Expr %in% rownames(test.list[[t]]))]
+    
+      datExpr[[t]] = t(as.matrix(test.list[[t]][Expr,] ))
+      
     }
     
   }
