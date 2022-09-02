@@ -55,7 +55,7 @@ run.scWGCNA = function(p.cells,
     gnames= data.frame(x=rownames(p.cells),y=rownames(p.cells), row.names = rownames(p.cells))
   }  else {gnames = g.names; rownames(gnames) = gnames[1,]}
   
-  nonex = which(apply(s.Wdata@assays$RNA@counts, 1, function(x) length(which(x >0))) < min.cells)
+  nonex = which(tabulate(s.Wdata@assays$RNA@counts@i + 1) < min.cells)
   
   # If no variable genes are provided
   if (missing(features)) {
