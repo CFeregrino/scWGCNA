@@ -11,7 +11,8 @@ run.scWGCNA(
   features,
   is.pseudocell = T,
   min.cells = 10,
-  less = F,
+  less = T,
+  merging = T,
   g.names
 )
 }
@@ -28,7 +29,9 @@ run.scWGCNA(
 
 \item{min.cells}{Numeric. The minimum cells in which genes need to be expressed, to be considered for variable genes calculation. Default is 10}
 
-\item{less}{Logical. In case you are getting too many small modules, use this option as T}
+\item{less}{Logical. Should modules that are expressed in very few cells be filtered or merged with other modules? Default = T}
+
+\item{merging}{Logical. Should modules that are very similar (euclidean distance <0.25 ) be merged? Default = T}
 
 \item{g.names}{Data frame. If you're using gene IDs and no symbols, you might wanna provide a list of gene names for plotting. Two columns: 1= ids present in expression matrix, 2= names to appear in plots. Rownames= same as 1st row}
 }

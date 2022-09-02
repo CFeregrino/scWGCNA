@@ -7,7 +7,8 @@
 #' @param features Variable. The features to be used for the analysis. Default is F, which makes the script calculate variable genes.
 #' @param is.pseudocell Logical. Is the main data pseudocell data? Default is T
 #' @param min.cells Numeric. The minimum cells in which genes need to be expressed, to be considered for variable genes calculation. Default is 10
-#' @param less Logical. In case you are getting too many small modules, use this option as T
+#' @param less Logical. Should modules that are expressed in very few cells be filtered or merged with other modules? Default = T
+#' @param merging Logical. Should modules that are very similar (euclidean distance <0.25 ) be merged? Default = T
 #' @param g.names Data frame. If you're using gene IDs and no symbols, you might wanna provide a list of gene names for plotting. Two columns: 1= ids present in expression matrix, 2= names to appear in plots. Rownames= same as 1st row
 #' @return A list object with the resulting WGCNA data. 
 #' @export
@@ -36,7 +37,8 @@ run.scWGCNA = function(p.cells,
                        features,
                        is.pseudocell=T,
                        min.cells=10,
-                       less=F,
+                       less=T,
+                       merging=T,
                        g.names){
   
   backup.options = options()
@@ -217,7 +219,14 @@ run.scWGCNA = function(p.cells,
     
     # Convert numeric lables into colors
     dynamicColors = WGCNA::labels2colors(dynamicMods)
-    table(dynamicColors)
+    
+    if(change>2 & merging == T){
+      
+      cat("\n\nIMPORTANT NOTE!!!\nYou have run this analysis witht the option less=TRUE. This means that based on their expression pattern, modules with similar expression profile (distance < 0.25) be merged during the iterations.\n")
+      
+      dynamicColors = WGCNA::mergeCloseModules(datExpr, dynamicColors, cutHeight = 0.25, verbose = 3)$colors
+      
+    }
     
     #Save, to keep track of the trees
     my.trees[[length(my.trees)+1]] = list(geneTree, dynamicColors)
@@ -271,7 +280,7 @@ run.scWGCNA = function(p.cells,
     
     if (change == 2 & less == T) {
       
-      cat("\n\nIMPORTANT NOTE!!!\nYou have run this analysis witht the option less=TRUE. This means that the analysis will try to reduce the number of modules detected, based on their expression pattern. If modules have very similar expression profile (distance < 0.25), they will be merged. Moreover, if a module seems to be highly expressed in only 1-3 cells ( cells expressing >2*(max(expression)/3) ), it will be removed.\n")
+      cat("\n\nIMPORTANT NOTE!!!\nYou have run this analysis witht the option less=TRUE. If a module seems to be highly expressed in only 1-3 cells ( cells expressing >2*(max(expression)/3) ), it will be removed.\n")
       
       my.filtered = FilterMods_int(dynamicColors=dynamicColors, s.Wdata=s.Wdata, datExpr=datExpr,
                                    geneTree=geneTree, my.power = my.power)
