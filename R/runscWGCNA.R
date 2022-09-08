@@ -223,7 +223,7 @@ run.scWGCNA = function(p.cells,
     if(change>2 & merging == T){
       
       if(change==3){
-        cat("\n\nIMPORTANT NOTE!!!\nYou have run this analysis witht the option less=TRUE. This means that based on their expression pattern, modules with similar expression profile (distance < 0.25) be merged during the iterations.\n")
+        cat("\n\nIMPORTANT NOTE!!!\nYou have run this analysis witht the option merging=TRUE. This means that based on their expression pattern, modules with similar expression profile (distance < 0.25) be merged during the iterations.\n")
       }
       dynamicColors = WGCNA::mergeCloseModules(datExpr, dynamicColors, cutHeight = 0.25, verbose = 3)$colors
       
