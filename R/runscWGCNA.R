@@ -121,7 +121,9 @@ run.scWGCNA = function(p.cells,
     # Min cluster sizes, from 7 to 30
     x=seq(7,30,1)
     # The height, up and down from the calculated height. We expect some "No module detected"
-    y=seq(cutheight-0.0005,cutheight + 0.0005,0.0001)
+    y=seq(cutheight-0.0005,
+          ifelse(cutheight + 0.0005>0.9999,0.9999,cutheight + 0.0005),
+          0.0001)
     
     # The actual dataframe
     w=data.frame()
